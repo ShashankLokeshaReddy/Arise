@@ -1,11 +1,10 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.template import loader
+
 
 # Create your views here.
-
 def index(request):
-    return HttpResponse("You are at home.")
-
-def redirect(request):
-    return HttpResponseRedirect(reverse('home:index'))
+    template = loader.get_template('home/index.html')
+    return HttpResponse(template.render({}, request))
