@@ -1,3 +1,6 @@
+# python
+*.egg-info
+
 # pycharm
 .idea
 
@@ -10,8 +13,11 @@ __pycache__
 # Mac file system
 .DS_STORE
 
-#conda
+#c onda
 /arise.egg-info/
 
 # jupyter notebook
 *.ipynb_checkpoints
+
+# Excel intermediate
+~$*.xls*
