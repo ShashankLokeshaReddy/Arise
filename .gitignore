@@ -1,3 +1,6 @@
+# python
+*.egg-info
+
 # pycharm
 .idea
 
