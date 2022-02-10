@@ -23,7 +23,7 @@
 
 <body>
 
-<div class="container pt-3">
+<div class="container pt-3" id="testContainer">
     <h1>ARISE Prototype</h1>
 
     <!-- Here goes some component that contains the picker -->
@@ -35,9 +35,11 @@
 {#            <span class="input-group-text"><i class="bi bi-calendar"></i></span>#}
 
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="button" class="btn btn-primary" onclick="showUserInConsole()">Submit</button>
 
     </div>
+
+    <button id="testJquery" type="button" value="Click" class="btn btn-primary">Klick mich</button>
 
 </div>
 
@@ -53,6 +55,7 @@
 </script>
 <script src="{% static 'home/js/datepicker.js' %}">
 </script>
+<script src="{% static 'home/js/fetch_request.js' %}"></script>
 
 <!-- Some datepicker script??-->
 </body>
