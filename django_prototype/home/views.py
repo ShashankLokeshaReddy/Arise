@@ -9,4 +9,7 @@ def index(request):
 
 
 def test_api(request):
-    return JsonResponse({"Hello": "World"})
+    # rufe get capacities auf --> Tabelle
+    # request enthält irgendwie Datum
+    selected_date = request.GET['date']
+    return JsonResponse({"selected_date": selected_date})

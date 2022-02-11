@@ -16,7 +16,7 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css"
           integrity="sha512-mSYUmp1HYZDFaVKK//63EcZq4iFWFjxSL+Z3T/aCt4IO9Cejm03q3NKKYN6pFQzY0SBOr8h+eCIAZHPXcpZaNw=="
           crossorigin="anonymous" referrerpolicy="no-referrer"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 
     <title>ARISE Prototype</title>
 </head>
@@ -26,20 +26,15 @@
 <div class="container pt-3" id="testContainer">
     <h1>ARISE Prototype</h1>
 
-    <!-- Here goes some component that contains the picker -->
-    <div id="sandbox-container">
-        <div class="input-group date">
-            <input type="text" class="form-control" id="order-selection-date">
-            <span class="input-group-addon"> </span>
-{#            <i class="bi bi-calendar"></i>#}
-{#            <span class="input-group-text"><i class="bi bi-calendar"></i></span>#}
-
+    <div class="col-2" id="datepicker-container">
+        <div class="input-group date" id="date-group">
+            <input type="text" class="form-control" id="order-selection-date" placeholder="Planning Date">
+            <span class="input-group-text">
+                <i class="bi bi-calendar-week"></i>
+            </span>
         </div>
-        <button type="button" class="btn btn-primary" onclick="showUserInConsole()">Submit</button>
-
     </div>
 
-    <button id="testJquery" type="button" value="Click" class="btn btn-primary">Klick mich</button>
 
 </div>
 
