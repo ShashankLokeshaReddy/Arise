@@ -224,8 +224,12 @@ def run_capacity_check(df_order, df_Schichtplan, df_Maschinenplan):
 
     """
     df_order = calculate_production_date(df_order, df_Schichtplan)
-    df_order =  parse_machine_number(df_order)
+    df_order = parse_machine_number(df_order)
     df_workload = calculate_machine_workload(df_order)
-    df_capacity = get_capacity(df_workload['machine_id'].unique(), df_workload['date'].unique(), df_Schichtplan, df_Maschinenplan)
-    df_workload_capacity = df_workload.merge(df_capacity, on=['machine_id', 'date'])
+    df_capacity = get_capacity(df_workload['machine_id'].unique(), 
+                               df_workload['date'].unique(), df_Schichtplan, 
+                               df_Maschinenplan)
+    df_workload_capacity = df_workload.merge(df_capacity, 
+                                             on=['machine_id', 'date'])
     return df_order, df_workload_capacity
+    
