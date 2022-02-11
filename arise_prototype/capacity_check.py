@@ -194,3 +194,38 @@ def get_capacity(id_machines, dates, df_Schichtplan, df_Maschinenschichten):
             df_capacity = df_capacity.append(new_row, ignore_index=True)
 
     return df_capacity
+
+
+def run_capacity_check(df_order, df_Schichtplan, df_Maschinenplan):
+    """
+    Run functions to calculate production date and check capacities.
+
+    Parameters
+    ----------
+    df_order : TYPE
+        DESCRIPTION.
+    df_Schichtplan : pd.DataFrame
+        DataFrame with shift description. Column 'DATUM' with the date
+        for each day and 'ARBEITSZEIT_MIN' the overall worktime of the day.
+    df_Maschinenplan : pd.DataFrame
+        DataFrame with the planned runtimes of the machines each day. Columns
+        'ID_MASCHINE' (machine id), 'DATUM' (date), 'MZEIT_MIN'
+        (planned runtime).
+
+    Returns
+    -------
+    df_order : pd.DataFrame
+        DataFrame with orders and column 'LTermin' (Delivery date),
+        'MaschNr' (planned production machine), 'Laufzeit_Soll' (planned
+        runtime).
+    df_workload_capacity : pd.DataFrame
+        DataFrame with the planned productiont time and capacity for
+        each machine each day.
+
+    """
+    df_order = calculate_production_date(df_order, df_Schichtplan)
+    df_order =  parse_machine_number(df_order)
+    df_workload = calculate_machine_workload(df_order)
+    df_capacity = get_capacity(df_workload['machine_id'].unique(), df_workload['date'].unique(), df_Schichtplan, df_Maschinenplan)
+    df_workload_capacity = df_workload.merge(df_capacity, on=['machine_id', 'date'])
+    return df_order, df_workload_capacity
