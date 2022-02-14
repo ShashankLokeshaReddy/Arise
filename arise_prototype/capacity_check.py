@@ -7,7 +7,7 @@ def load_Schichtplaene(start, end):
     date_columns = ['DATUM', 'START', 'ENDE', 'P1_START', 'P1_ENDE',
                     'P2_START', 'P2_ENDE', 'P3_START', 'P3_ENDE']
     filepath_Werksplan = "../data/Kapazitätsplanung-20220121_Werksplanung.csv"
-    df_Schichtplan = pd.read_csv(filepath_Werksplan),
+    df_Schichtplan = pd.read_csv(filepath_Werksplan,
                                  parse_dates=date_columns)
     date_columns = ['DATUM', 'MSTART', 'MENDE', 'MP1_START', 'MP1_ENDE',
                     'MP2_START', 'MP2_ENDE', 'MP3_START', 'MP3_ENDE']
