@@ -1,12 +1,17 @@
 import numpy as np
 import pandas as pd
 
+
 def load_Schichtplaene(start, end):
     # Load Schichtplan and machine specific Schichtplan
-    date_columns = ['DATUM', 'START', 'ENDE', 'P1_START', 'P1_ENDE', 'P2_START', 'P2_ENDE', 'P3_START', 'P3_ENDE']
-    df_Schichtplan = pd.read_csv("../data/Kapazitätsplanung-20220121_Werksplanung.csv", parse_dates=date_columns)
-    date_columns = ['DATUM', 'MSTART', 'MENDE', 'MP1_START', 'MP1_ENDE', 'MP2_START', 'MP2_ENDE', 'MP3_START', 'MP3_ENDE']
-    df_Maschinenplan = pd.read_csv("../data/Kapazitätsplanung-20220121_Maschinenplanung.csv", parse_dates=date_columns)
+    date_columns = ['DATUM', 'START', 'ENDE', 'P1_START', 'P1_ENDE', 
+                    'P2_START', 'P2_ENDE', 'P3_START', 'P3_ENDE']
+    df_Schichtplan = pd.read_csv("../data/Kapazitätsplanung-20220121_Werksplanung.csv", 
+                                 parse_dates=date_columns)
+    date_columns = ['DATUM', 'MSTART', 'MENDE', 'MP1_START', 'MP1_ENDE', 
+                    'MP2_START', 'MP2_ENDE', 'MP3_START', 'MP3_ENDE']
+    df_Maschinenplan = pd.read_csv("../data/Kapazitätsplanung-20220121_Maschinenplanung.csv", 
+                                   parse_dates=date_columns)
     return df_Schichtplan, df_Maschinenplan
 
 
@@ -15,10 +20,11 @@ def load_static_orders(start, end):
     df = pd.read_csv("../data/Auftragsfolgen-20211207.csv")
     df['LTermin'] = pd.to_datetime(df['LTermin'], format='%Y-%m-%d %H:%M:%S')
     df['LTermin'] = df['LTermin'].dt.to_pydatetime()
-    df = df[df['ID_Maschstatus']==1]
-    df = df[['MaschNr', 'Laufzeit_Soll', 'LTermin', 'KndNr', 'Suchname', 'AKNR', 'ArtNr_Teil', 'TeilNr', 'SchrittNr']]
+    df = df[df['ID_Maschstatus'] == 1]
+    df = df['MaschNr', 'Laufzeit_Soll', 'LTermin', 'KndNr', 'Suchname',
+             'AKNR', 'ArtNr_Teil', 'TeilNr', 'SchrittNr']
     df = df.drop_duplicates()
-    mask = (df['LTermin']>=start) & (df['LTermin']<end)
+    mask = (df['LTermin'] >= start) & (df['LTermin'] < end)
     df = df.loc[mask]
     return df
 
