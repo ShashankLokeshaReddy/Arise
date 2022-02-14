@@ -1,5 +1,5 @@
 $('#datepicker-container input').datepicker({
-    format: "dd.mm.yyyy",
+    format: "yyyy-mm-dd",
     weekStart: 1,
     todayBtn: "linked",
     autoclose: true,
