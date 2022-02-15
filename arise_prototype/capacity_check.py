@@ -11,8 +11,8 @@ def load_Schichtplaene(start, end):
                                  parse_dates=date_columns)
     date_columns = ['DATUM', 'MSTART', 'MENDE', 'MP1_START', 'MP1_ENDE',
                     'MP2_START', 'MP2_ENDE', 'MP3_START', 'MP3_ENDE']
-    filepath_Maschinenplan = "../data/Kapazitätsplanung-20220121_Maschinenplanung.csv"
-    df_Maschinenplan = pd.read_csv(filepath_Maschinenplan,
+    filepath_MPlan = "../data/Kapazitätsplanung-20220121_Maschinenplanung.csv"
+    df_Maschinenplan = pd.read_csv(filepath_Mlan,
                                    parse_dates=date_columns)
     return df_Schichtplan, df_Maschinenplan
 
