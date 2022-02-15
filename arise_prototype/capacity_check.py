@@ -56,12 +56,13 @@ def load_static_orders(start, end):
     """
     # Load Auftragsfolgen
     df = pd.read_csv("../data/Auftragsfolgen-20211207.csv")
+    # Format delivery dates as date objects
     df['LTermin'] = pd.to_datetime(df['LTermin'], format='%Y-%m-%d %H:%M:%S')
     df['LTermin'] = df['LTermin'].dt.to_pydatetime()
+    # Select only rows with state production and drop duplicates
     df = df[df['ID_Maschstatus'] == 1]
-    df = df['MaschNr', 'Laufzeit_Soll', 'LTermin', 'KndNr', 'Suchname',
-            'AKNR', 'ArtNr_Teil', 'TeilNr', 'SchrittNr']
     df = df.drop_duplicates()
+    # Timeframe
     mask = (df['LTermin'] >= start) & (df['LTermin'] < end)
     df = df.loc[mask]
     return df
