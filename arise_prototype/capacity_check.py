@@ -2,6 +2,72 @@ import numpy as np
 import pandas as pd
 
 
+def load_Schichtplaene(start, end):
+    """
+    Functions loads shift plans and machine specific shift plans
+    from static csv-files.
+
+    Parameters
+    ----------
+    start : string
+        Start date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+    end : string
+        End date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+
+    Returns
+    -------
+    df_Schichtplan : pd.DataFrame
+        DataFrame object with shift planning for each day.
+    df_Maschinenplan : pd.DataFrame
+        DataFrame object with machine specific shift planning.
+
+    """
+    # Load Schichtplan and machine specific Schichtplan
+    date_columns = ['DATUM', 'START', 'ENDE', 'P1_START', 'P1_ENDE',
+                    'P2_START', 'P2_ENDE', 'P3_START', 'P3_ENDE']
+    filepath_Werksplan = "../data/Kapazitätsplanung-20220121_Werksplanung.csv"
+    df_Schichtplan = pd.read_csv(filepath_Werksplan,
+                                 parse_dates=date_columns)
+    date_columns = ['DATUM', 'MSTART', 'MENDE', 'MP1_START', 'MP1_ENDE',
+                    'MP2_START', 'MP2_ENDE', 'MP3_START', 'MP3_ENDE']
+    filepath_MPlan = "../data/Kapazitätsplanung-20220121_Maschinenplanung.csv"
+    df_Maschinenplan = pd.read_csv(filepath_MPlan,
+                                   parse_dates=date_columns)
+    return df_Schichtplan, df_Maschinenplan
+
+
+def load_static_orders(start, end):
+    """
+    Function loads orders for the specified timeframe
+    from a static csv-file.
+
+    Parameters
+    ----------
+    start : string
+        Start date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+    end : string
+        End date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        DataFrame object with orders and their parameters as columns.
+
+    """
+    # Load Auftragsfolgen
+    df = pd.read_csv("../data/Auftragsfolgen-20211207.csv")
+    # Format delivery dates as date objects
+    df['LTermin'] = pd.to_datetime(df['LTermin'], format='%Y-%m-%d %H:%M:%S')
+    df['LTermin'] = df['LTermin'].dt.to_pydatetime()
+    # Select only rows with state production and drop duplicates
+    df = df[df['ID_Maschstatus'] == 1]
+    df = df.drop_duplicates()
+    # Timeframe
+    mask = (df['LTermin'] >= start) & (df['LTermin'] < end)
+    df = df.loc[mask]
+    return df
+
+
 def parse_machine_number(df):
     """
     Function extracts the machine number of a expression in the format "SL 3"
@@ -194,3 +260,43 @@ def get_capacity(id_machines, dates, df_Schichtplan, df_Maschinenschichten):
             df_capacity = df_capacity.append(new_row, ignore_index=True)
 
     return df_capacity
+
+
+def run_capacity_check(start, end):
+    """
+    Run functions to calculate production date and check capacities.
+
+    Parameters
+    ----------
+    df_order : TYPE
+        DESCRIPTION.
+    df_Schichtplan : pd.DataFrame
+        DataFrame with shift description. Column 'DATUM' with the date
+        for each day and 'ARBEITSZEIT_MIN' the overall worktime of the day.
+    df_Maschinenplan : pd.DataFrame
+        DataFrame with the planned runtimes of the machines each day. Columns
+        'ID_MASCHINE' (machine id), 'DATUM' (date), 'MZEIT_MIN'
+        (planned runtime).
+
+    Returns
+    -------
+    df_order : pd.DataFrame
+        DataFrame with orders and column 'LTermin' (Delivery date),
+        'MaschNr' (planned production machine), 'Laufzeit_Soll' (planned
+        runtime).
+    df_workload_capacity : pd.DataFrame
+        DataFrame with the planned productiont time and capacity for
+        each machine each day.
+
+    """
+    df_Schichtplan, df_Maschinenplan = load_Schichtplaene(start, end)
+    df_order = load_static_orders(start, end)
+    df_order = calculate_production_date(df_order, df_Schichtplan)
+    df_order = parse_machine_number(df_order)
+    df_workload = calculate_machine_workload(df_order)
+    df_capacity = get_capacity(df_workload['machine_id'].unique(),
+                               df_workload['date'].unique(), df_Schichtplan,
+                               df_Maschinenplan)
+    df_workload_capacity = df_workload.merge(df_capacity,
+                                             on=['machine_id', 'date'])
+    return df_order, df_workload_capacity
