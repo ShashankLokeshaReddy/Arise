@@ -1,6 +1,6 @@
 # ARISE prototype
 
-Code for the ARISE prototype
+Code for the ARISE prototype. Update
 
 Status of Main: 
 [![pipeline status](https://gitlab.cc-asp.fraunhofer.de/arise-project/arise-prototype/badges/main/pipeline.svg)](https://gitlab.cc-asp.fraunhofer.de/arise-project/arise-prototype/-/commits/main)
@@ -23,3 +23,8 @@ A line that has a hit or is just a definition:
 A line that is untested:
 
 ![Coverage-2](attachments/test-coverage-2.png)
+
+# Installation local package
+Gehe in den Ornder darüber und schreibe pip install -e arise-prototype
+importiere das package dann mit arise_prototype
+Code for the ARISE prototype
