@@ -38,8 +38,8 @@ def load_Schichtplaene(start, end):
 
 def load_static_orders(start, end):
     """
-    Function loads orders for the specified timeframe 
-    from a static csv-file. 
+    Function loads orders for the specified timeframe
+    from a static csv-file.
 
     Parameters
     ----------
