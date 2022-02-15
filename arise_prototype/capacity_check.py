@@ -3,6 +3,25 @@ import pandas as pd
 
 
 def load_Schichtplaene(start, end):
+    """
+    Functions loads shift plans and machine specific shift plans
+    from static csv-files.
+
+    Parameters
+    ----------
+    start : string
+        Start date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+    end : string
+        End date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+
+    Returns
+    -------
+    df_Schichtplan : pd.DataFrame
+        DataFrame object with shift planning for each day.
+    df_Maschinenplan : pd.DataFrame
+        DataFrame object with machine specific shift planning.
+
+    """
     # Load Schichtplan and machine specific Schichtplan
     date_columns = ['DATUM', 'START', 'ENDE', 'P1_START', 'P1_ENDE',
                     'P2_START', 'P2_ENDE', 'P3_START', 'P3_ENDE']
@@ -18,6 +37,23 @@ def load_Schichtplaene(start, end):
 
 
 def load_static_orders(start, end):
+    """
+    Function loads orders for the specified timeframe 
+    from a static csv-file. 
+
+    Parameters
+    ----------
+    start : string
+        Start date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+    end : string
+        End date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        DataFrame object with orders and their parameters as columns.
+
+    """
     # Load Auftragsfolgen
     df = pd.read_csv("../data/Auftragsfolgen-20211207.csv")
     df['LTermin'] = pd.to_datetime(df['LTermin'], format='%Y-%m-%d %H:%M:%S')
