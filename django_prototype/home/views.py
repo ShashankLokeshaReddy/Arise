@@ -1,7 +1,8 @@
 from django.http import HttpResponse
 from django.template import loader
 import pandas as pd
-
+import arise_prototype.capacity_check as capacity_check
+import datetime as datetime
 
 # Create your views here.
 def index(request):
@@ -18,6 +19,9 @@ def test_api(request):
     template = loader.get_template('home/production_info_table.html')
     print('loading data')
     data = pd.read_csv('tmp_data/test_data.csv')
+    # start = datetime.strptime(selected_date, '%Y-%m-%d 00:00:00'
+    # end = start + datetime.timedelta(days=1)
+    # df_order, df_workload = capacity_check.run_capacity_check(start, end)
     print('data loaded')
     data = data[data.Start.str.startswith(selected_date)]
     html = data.to_html()
