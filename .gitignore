@@ -25,5 +25,7 @@ __pycache__
 # Excel intermediate
 ~$*.xls*
 
+# Windows line ending issues
+.gitattributes
 # Django DB
 /django_prototype/data/
