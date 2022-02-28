@@ -25,12 +25,12 @@ def load_Schichtplaene(start, end):
     # Load Schichtplan and machine specific Schichtplan
     date_columns = ['DATUM', 'START', 'ENDE', 'P1_START', 'P1_ENDE',
                     'P2_START', 'P2_ENDE', 'P3_START', 'P3_ENDE']
-    filepath_Werksplan = "../data/Kapazitätsplanung-20220121_Werksplanung.csv"
+    filepath_Werksplan = "tmp_data/Kapazitätsplanung-20220121_Werksplanung.csv"
     df_Schichtplan = pd.read_csv(filepath_Werksplan,
                                  parse_dates=date_columns)
     date_columns = ['DATUM', 'MSTART', 'MENDE', 'MP1_START', 'MP1_ENDE',
                     'MP2_START', 'MP2_ENDE', 'MP3_START', 'MP3_ENDE']
-    filepath_MPlan = "../data/Kapazitätsplanung-20220121_Maschinenplanung.csv"
+    filepath_MPlan = "tmp_data/Kapazitätsplanung-20220121_Maschinenplanung.csv"
     df_Maschinenplan = pd.read_csv(filepath_MPlan,
                                    parse_dates=date_columns)
     return df_Schichtplan, df_Maschinenplan
@@ -55,7 +55,7 @@ def load_static_orders(start, end):
 
     """
     # Load Auftragsfolgen
-    df = pd.read_csv("../data/Auftragsfolgen-20211207.csv")
+    df = pd.read_csv("tmp_data/Auftragsfolgen-20211207.csv")
     # Format delivery dates as date objects
     df['LTermin'] = pd.to_datetime(df['LTermin'], format='%Y-%m-%d %H:%M:%S')
     df['LTermin'] = df['LTermin'].dt.to_pydatetime()
