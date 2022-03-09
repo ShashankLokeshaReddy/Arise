@@ -1,5 +1,36 @@
 import numpy as np
 import pandas as pd
+from datetime import timedelta
+
+def material_check(set_date):
+    """
+    Generates a function that checks whether the supplier
+    material has been delivered based on the given date. 
+    Returns true if delivery date is in the past or
+    one day after the given date. 
+
+    Parameters
+    ----------
+    set_date : date
+        Date on which you wish to validate avialability of material.
+        Ideally this is the current date. 
+    
+    Returns
+    ----------
+    Material_check : date --> boolean
+    """
+
+    def bool_material_check(LT):
+        # wenn Liefertermin nicht bekannt, dann False
+        if pd.isnull(LT): 
+            return False
+        # wenn der morgige Tag schon weiter in der Zukunft liegt, als das Datum des Liefertermins, dann True
+        elif (set_date+timedelta(days=1))>=LT: 
+            return True
+        else:
+            return False
+
+    return bool_material_check
 
 
 def load_Schichtplaene(start, end):
