@@ -26,7 +26,7 @@ def material_check(set_date):
             return False
         # wenn der morgige Tag schon weiter in der Zukunft liegt, 
         # als das Datum des Liefertermins, dann True
-        elif (set_date+timedelta(days=1))>=LT:
+        elif (set_date + timedelta(days=1)) >= LT:
             return True
         else:
             return False
