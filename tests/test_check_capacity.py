@@ -25,4 +25,3 @@ def test_material_check():
     test_date2 = pd.to_datetime("2016-02-18").date()
     material_check_test = cc.material_check(test_date1)
     assert material_check_test(test_date2) == False
-    

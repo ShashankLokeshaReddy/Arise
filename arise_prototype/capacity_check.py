@@ -15,7 +15,7 @@ def material_check(set_date):
     set_date : date
         Date on which you wish to validate avialability of material.
         Ideally this is the current date.
-    
+
     Returns
     ----------
     Material_check : date --> boolean
@@ -24,7 +24,7 @@ def material_check(set_date):
         # wenn Liefertermin nicht bekannt, dann False
         if pd.isnull(LT):
             return False
-        # wenn der morgige Tag schon weiter in der Zukunft liegt, 
+        # wenn der morgige Tag schon weiter in der Zukunft liegt,
         # als das Datum des Liefertermins, dann True
         elif (set_date + timedelta(days=1)) >= LT:
             return True
@@ -92,10 +92,10 @@ def load_static_orders(start, end):
     df['LTermin'] = df['LTermin'].dt.to_pydatetime()
     # Select only rows with state production and drop duplicates
     df = df[df['ID_Maschstatus'] == 1]
-    mask = ['AKNR', 'Fefco_Teil', 'ArtNr_Teil', 'TeilNr', 'SchrittNr', 'KndNr', 
+    mask = ['AKNR', 'Fefco_Teil', 'ArtNr_Teil', 'TeilNr', 'SchrittNr', 'KndNr',
             'Suchname', 'ID_Druck', 'Bogen_Laenge_Brutto', 'Bogen_Breite_Brutto',
-            'LTermin', 'MaschNr', 'Ruestzeit_Soll', 'Laufzeit_Soll', 
-            'Menge_Soll', 'Bemerkung', 'Lieferdatum_Romaterial' ]
+            'LTermin', 'MaschNr', 'Ruestzeit_Soll', 'Laufzeit_Soll',
+            'Menge_Soll', 'Bemerkung', 'Lieferdatum_Romaterial']
     df = df[mask]
     df = df.drop_duplicates()
     # Timeframe
@@ -326,7 +326,7 @@ def run_frozen_zone_definition(start, end):
 
     """
     print('Note: In run_frozen_zone some functions can process a timeframe ')
-    print('in others the one can only give the start date and timeframe is fix')  
+    print('in others the one can only give the start date and timeframe is fix')
     df_Schichtplan, df_Maschinenplan = load_Schichtplaene(start, end)
     df_order = load_static_orders(start, end)
     df_order = df_order["Lieferdatum_Rohmaterial"].apply(material_check(start))
