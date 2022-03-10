@@ -92,6 +92,11 @@ def load_static_orders(start, end):
     df['LTermin'] = df['LTermin'].dt.to_pydatetime()
     # Select only rows with state production and drop duplicates
     df = df[df['ID_Maschstatus'] == 1]
+    mask = ['AKNR', 'Fefco_Teil', 'ArtNr_Teil', 'TeilNr', 'SchrittNr', 'KndNr', 
+            'Suchname', 'ID_Druck', 'Bogen_Laenge_Brutto', 'Bogen_Breite_Brutto',
+            'LTermin', 'MaschNr', 'Ruestzeit_Soll', 'Laufzeit_Soll', 
+            'Menge_Soll', 'Bemerkung', 'Lieferdatum_Romaterial' ]
+    df = df[mask]
     df = df.drop_duplicates()
     # Timeframe
     mask = (df['LTermin'] >= start) & (df['LTermin'] < end)
@@ -293,7 +298,7 @@ def get_capacity(id_machines, dates, df_Schichtplan, df_Maschinenschichten):
     return df_capacity
 
 
-def run_capacity_check(start, end):
+def run_frozen_zone_definition(start, end):
     """
     Run functions to calculate production date and check capacities.
 
@@ -320,8 +325,11 @@ def run_capacity_check(start, end):
         each machine each day.
 
     """
+    print('Note: In run_frozen_zone some functions can process a timeframe ')
+    print('in others the one can only give the start date and timeframe is fix')  
     df_Schichtplan, df_Maschinenplan = load_Schichtplaene(start, end)
     df_order = load_static_orders(start, end)
+    df_order = df_order["Lieferdatum_Rohmaterial"].apply(material_check(start))
     df_order = calculate_production_date(df_order, df_Schichtplan)
     df_order = parse_machine_number(df_order)
     df_workload = calculate_machine_workload(df_order)
