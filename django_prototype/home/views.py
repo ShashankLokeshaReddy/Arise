@@ -20,7 +20,7 @@ def test_api(request):
     print('loading data')
     start = datetime.datetime.strptime(selected_date, '%Y-%m-%d')
     end = start + datetime.timedelta(days=1)
-    data, df_workload = capacity_check.run_capacity_check(start, end)
+    data, df_workload = capacity_check.run_frozen_zone_definition(start, end)
     print('data loaded')
     data = data[data.Start.str.startswith(selected_date)]
     html = data.to_html()
