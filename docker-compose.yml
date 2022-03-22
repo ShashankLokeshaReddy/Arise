@@ -10,8 +10,7 @@ services:
     command: postgres -c stats_temp_directory=/tmp
   web:
     build: .
-    command: ["./django_prototype/wait-for-it.sh", "db:5432", "--", "python", "django_prototype/manage.py", "runserver", "0.0.0.0:8000"]
-    # python manage.py runserver 0.0.0.0:8000
+    command: "./django_docker_startup.sh"
     volumes:
       - .:/code
       - ./data:/code/tmp_data
