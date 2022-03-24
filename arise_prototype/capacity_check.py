@@ -1,6 +1,5 @@
-import numpy as np
+import math
 import pandas as pd
-from datetime import timedelta
 
 
 def material_check(set_date):
@@ -21,12 +20,19 @@ def material_check(set_date):
     Material_check : date --> boolean
     """
     def bool_material_check(LT):
+        if LT is None:
+            return False
+        elif type(LT) is float:
+            if math.isnan(LT):
+                return False
         # wenn Liefertermin nicht bekannt, dann False
+        print('LT type:', type(LT), ' LT: ', LT)
+        print('set type: ', type(set_date + pd.Timedelta(1, "d")), ' set: ', type(set_date + pd.Timedelta(1, "d")))
         if pd.isnull(LT):
             return False
         # wenn der morgige Tag schon weiter in der Zukunft liegt,
         # als das Datum des Liefertermins, dann True
-        elif (set_date + timedelta(days=1)) >= LT:
+        elif (set_date + pd.Timedelta(1, "d")) >= LT:
             return True
         else:
             return False
@@ -75,9 +81,9 @@ def load_static_orders(start, end):
     Parameters
     ----------
     start : string
-        Start date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+        Start date of timeframe in format pd.datetime.
     end : string
-        End date of timeframe in format '%Y-%m-%d %H:%M:%S'.
+        End date of timeframe in format 'pd.datetime.
 
     Returns
     -------
@@ -89,13 +95,13 @@ def load_static_orders(start, end):
     df = pd.read_csv("tmp_data/Auftragsfolgen-20211207.csv")
     # Format delivery dates as date objects
     df['LTermin'] = pd.to_datetime(df['LTermin'], format='%Y-%m-%d %H:%M:%S')
-    df['LTermin'] = df['LTermin'].dt.to_pydatetime()
+    df['Lieferdatum_Rohmaterial'] = pd.to_datetime(df['Lieferdatum_Rohmaterial'], format='%Y-%m-%d %H:%M:%S')
     # Select only rows with state production and drop duplicates
     df = df[df['ID_Maschstatus'] == 1]
     mask = ['AKNR', 'Fefco_Teil', 'ArtNr_Teil', 'TeilNr', 'SchrittNr', 'KndNr',
             'Suchname', 'ID_Druck', 'Bogen_Laenge_Brutto', 'Bogen_Breite_Brutto',
             'LTermin', 'MaschNr', 'Ruestzeit_Soll', 'Laufzeit_Soll',
-            'Menge_Soll', 'Bemerkung', 'Lieferdatum_Romaterial']
+            'Menge_Soll', 'Bemerkung', 'Lieferdatum_Rohmaterial']
     df = df[mask]
     df = df.drop_duplicates()
     # Timeframe
@@ -148,7 +154,7 @@ def new_production_date(date, df_Schichtplan):
         New production date that will be on a workday.
 
     """
-    production_date = date - np.timedelta64(1, 'D')
+    production_date = date - pd.Timedelta(1, 'd')
     production_date = check_production_date(production_date, df_Schichtplan)
     return production_date
 
@@ -197,7 +203,7 @@ def calculate_production_date(df_order, df_Schichtplan):
     ----------
     df_order : pd.DataFrame
         DataFrame with orders and column 'LTermin' with the
-        delivery date in format 'YYYY-MM-DD HH:mm:SS'.
+        delivery date in pd.datetime format.
     df_Schichtplan : pd.DataFrame
         DataFrame with shift description. Column 'DATUM' with the date
         for each day and 'ARBEITSZEIT_MIN' the overall worktime of the day.
@@ -210,7 +216,7 @@ def calculate_production_date(df_order, df_Schichtplan):
 
     """
     delivery_date = df_order['LTermin']
-    df_order['Production_date'] = delivery_date - np.timedelta64(1, 'D')
+    df_order['Production_date'] = delivery_date - pd.Timedelta(1, "d")
     for date in df_order['Production_date'].unique():
         approved_production_date = check_production_date(date, df_Schichtplan)
         if date != approved_production_date:
@@ -313,6 +319,10 @@ def run_frozen_zone_definition(start, end):
         DataFrame with the planned runtimes of the machines each day. Columns
         'ID_MASCHINE' (machine id), 'DATUM' (date), 'MZEIT_MIN'
         (planned runtime).
+    start: pd.datetime
+        Start of production horizon
+    end: pd.datetime
+        End of production horizon
 
     Returns
     -------
@@ -329,7 +339,8 @@ def run_frozen_zone_definition(start, end):
     print('in others the one can only give the start date and timeframe is fix')
     df_Schichtplan, df_Maschinenplan = load_Schichtplaene(start, end)
     df_order = load_static_orders(start, end)
-    df_order = df_order["Lieferdatum_Rohmaterial"].apply(material_check(start))
+    df_order["Material_check"] = df_order["Lieferdatum_Rohmaterial"].apply(material_check(start))
+    df_order = df_order[df_order['Material_check']]
     df_order = calculate_production_date(df_order, df_Schichtplan)
     df_order = parse_machine_number(df_order)
     df_workload = calculate_machine_workload(df_order)
@@ -338,4 +349,6 @@ def run_frozen_zone_definition(start, end):
                                df_Maschinenplan)
     df_workload_capacity = df_workload.merge(df_capacity,
                                              on=['machine_id', 'date'])
+    print('Start: ', start, ' type: ', type(start))
+    df_order = df_order[df_order['Production_date'] == start]
     return df_order, df_workload_capacity
