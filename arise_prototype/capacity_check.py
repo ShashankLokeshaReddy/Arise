@@ -3,6 +3,7 @@ from ntpath import join
 import pandas as pd
 import pyodbc
 
+
 def material_check(set_date):
     """
     Generates a function that checks whether the supplier
@@ -112,19 +113,22 @@ def load_static_orders(start, end):
 
 
 def load_orders_from_db(server, database, username, password):
-    cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
+    cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=server; 
+                          DATABASE = database;UID=username;PWD=password')
     cursor = cnxn.cursor()
     cursor.execute("""
-        select t3.Fefco_Teil, t3.ArtNr_Teil, t3.ID_Druck, t3.Bogen_Laenge_Brutto, t3.Bogen_Breite_Brutto, t1.MaschNr, t1.Ruestzeit_Soll, t1.Laufzeit_Soll,
-		    t1.Zeit_Soll, t3.Werkzeug_Nutzen, t3.Bestell_Nutzen, t1.Menge_Soll, t3.Bemerkung, t2.LTermin , t2.KndNr, t4.Suchname, t1.AKNR, t1.TeilNr, t1.SchrittNr, 
-		    t7.Lieferdatum as Lieferdatum_Rohmaterial, t7.BE_Erledigt
+        select t3.Fefco_Teil, t3.ArtNr_Teil, t3.ID_Druck, t3.Bogen_Laenge_Brutto, 
+            t3.Bogen_Breite_Brutto, t1.MaschNr, t1.Ruestzeit_Soll, t1.Laufzeit_Soll,
+            t1.Zeit_Soll, t3.Werkzeug_Nutzen, t3.Bestell_Nutzen, t1.Menge_Soll, 
+            t3.Bemerkung, t2.LTermin , t2.KndNr, t4.Suchname, t1.AKNR, t1.TeilNr, t1.SchrittNr, 
+            t7.Lieferdatum as Lieferdatum_Rohmaterial, t7.BE_Erledigt
         from tbl_Produktion_Fertigungsschritte t1 inner join
-	        tbl_Produktion t2 ON t1.AKNR = t2.AKNr inner join
-	        tbl_Produktion_Teil t3 ON t1.AKNR = t3.AKNR inner join
-	        tbl_Kunden t4 on t2.KndNr = t4.KndNr inner join
-	        tbl_Maschine_AK_Zeiten t5 on t1.AKNR = t5.AKNR and t1.TEILNR = t5.TEILNR and t1.ID_MaschNr = t5.MaschNr inner join
-	        tbl_Maschine_Status t6 on t5.ID_Maschstatus = t6.ID_Maschstatus left outer join
-	        tbl_Bestellung_Kopf t7 on t3.BESTNR = t7.BENR
+            tbl_Produktion t2 ON t1.AKNR = t2.AKNr inner join
+            tbl_Produktion_Teil t3 ON t1.AKNR = t3.AKNR inner join
+            tbl_Kunden t4 on t2.KndNr = t4.KndNr inner join
+            tbl_Maschine_AK_Zeiten t5 on t1.AKNR = t5.AKNR and t1.TEILNR = t5.TEILNR and t1.ID_MaschNr = t5.MaschNr inner join
+            tbl_Maschine_Status t6 on t5.ID_Maschstatus = t6.ID_Maschstatus left outer join
+            tbl_Bestellung_Kopf t7 on t3.BESTNR = t7.BENR
         where SchrittNr <> 0 and ID_MaschNr <> 1 and BE_Erledigt == 0""")
     rows = cursor.fetchall()
     cnxn.close()
