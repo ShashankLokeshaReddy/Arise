@@ -113,7 +113,7 @@ def load_static_orders(start, end):
 
 
 def load_orders_from_db(server, database, username, password):
-    cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=server; 
+    cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=server;
                           DATABASE = database;UID=username;PWD=password')
     cursor = cnxn.cursor()
     cursor.execute("""
