@@ -112,11 +112,19 @@ def load_static_orders(start, end):
     return df
 
 
-def load_orders_from_db(server, database, username, password):
-    cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=server;'+
+def load_table_from_db(server, database, username, password, sql_query):
+    cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=server;' +
                           'DATABASE = database;UID=username;PWD=password')
     cursor = cnxn.cursor()
-    cursor.execute("""
+    cursor.execute(sql_query)
+    rows = cursor.fetchall()
+    cnxn.close()
+    df = pd.DataFrame(rows)
+    return df
+
+
+def load_orders_from_db(server, database, username, password):
+    sql_query = """
         select t3.Fefco_Teil, t3.ArtNr_Teil, t3.ID_Druck, t3.Bogen_Laenge_Brutto, 
             t3.Bogen_Breite_Brutto, t1.MaschNr, t1.Ruestzeit_Soll, t1.Laufzeit_Soll,
             t1.Zeit_Soll, t3.Werkzeug_Nutzen, t3.Bestell_Nutzen, t1.Menge_Soll, 
@@ -129,10 +137,32 @@ def load_orders_from_db(server, database, username, password):
             tbl_Maschine_AK_Zeiten t5 on t1.AKNR = t5.AKNR and t1.TEILNR = t5.TEILNR and t1.ID_MaschNr = t5.MaschNr inner join
             tbl_Maschine_Status t6 on t5.ID_Maschstatus = t6.ID_Maschstatus left outer join
             tbl_Bestellung_Kopf t7 on t3.BESTNR = t7.BENR
-        where SchrittNr <> 0 and ID_MaschNr <> 1 and BE_Erledigt == 0""")
-    rows = cursor.fetchall()
-    cnxn.close()
-    df = pd.DataFrame(rows)
+        where SchrittNr <> 0 and ID_MaschNr <> 1 and BE_Erledigt == 0"""
+    df = load_table_from_db(server, database, username, password, sql_query)
+    return df
+
+
+def load_werksplan_from_db(server, database, username, password, start_date, end_date):
+    sql_query = """
+        select tbl_Produktion_Planung.DATUM, tbl_Produktion_Planung.JAHR, tbl_Produktion_Planung.MONAT, tbl_Produktion_Planung.KW, 
+            tbl_Produktion_Planung.TAG, tbl_Produktion_Planung.WOCHENTAG, tbl_Produktion_Planung.START, tbl_Produktion_Planung.ENDE, 
+            tbl_Produktion_Planung.P1_START, tbl_Produktion_Planung.P1_ENDE, tbl_Produktion_Planung.P2_START, tbl_Produktion_Planung.P2_ENDE, 
+            tbl_Produktion_Planung.P3_START, tbl_Produktion_Planung.P3_ENDE, tbl_Produktion_Planung.ARBEITSZEIT_MIN, tbl_Produktion_Planung.FEIERTAG
+        from schulte.dbo.tbl_Produktion_Planung tbl_Produktion_Planung
+        where DATUM >= {start} and DATUM <= {end}""".format(start=start_date, end=end_date)
+    df = load_table_from_db(server, database, username, password, sql_query)
+    return df
+
+
+def load_maschinenplanung_from_db(server, database, username, password, start_date, end_date):
+    sql_query = """
+        select tbl_Produktion_Planung_Maschine.DATUM, tbl_Produktion_Planung_Maschine.ID_MASCHINE, tbl_Produktion_Planung_Maschine.MSTART, 
+            tbl_Produktion_Planung_Maschine.MENDE, tbl_Produktion_Planung_Maschine.MP1_START, tbl_Produktion_Planung_Maschine.MP1_ENDE, 
+            tbl_Produktion_Planung_Maschine.MP2_START, tbl_Produktion_Planung_Maschine.MP2_ENDE, tbl_Produktion_Planung_Maschine.MP3_START, 
+            tbl_Produktion_Planung_Maschine.MP3_ENDE, tbl_Produktion_Planung_Maschine.MZEIT_MIN
+        from schulte.dbo.tbl_Produktion_Planung_Maschine tbl_Produktion_Planung_Maschine
+        where DATUM >= {start} and DATUM <= {end}""".format(start=start_date, end=end_date)
+    df = load_table_from_db(server, database, username, password, sql_query)
     return df
 
 
@@ -364,6 +394,8 @@ def run_frozen_zone_definition(start, end):
     print('Note: In run_frozen_zone some functions can process a timeframe ')
     print('in others the one can only give the start date and timeframe is fix')
     df_Schichtplan, df_Maschinenplan = load_Schichtplaene(start, end)
+    # df_Schichtplan = load_werksplan_from_db(server, database, username, password, start, end)
+    # df_Maschinenplan = load_maschinenplanung_from_db(server, database, username, password, start, end)
     df_order = load_static_orders(start, end)
     # df_order = load_orders_from_db(server, database, username, password)
     df_order["Material_check"] = df_order["Lieferdatum_Rohmaterial"].apply(material_check(start))
