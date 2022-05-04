@@ -8,6 +8,15 @@ services:
     environment:
       - POSTGRES_PASSWORD=postgres
     command: postgres -c stats_temp_directory=/tmp
+  mssql:
+    image: mcr.microsoft.com/mssql/server
+    volumes:
+    - ./data/mssql/data:/var/opt/mssql/data
+    - ./data/mssql/log:/var/opt/mssql/log
+    - ./data/mssql/secrets:/var/opt/mssql/secrets
+    environment: 
+    - MSSQL_PASSWORD=mssql_arise
+    - ACCEPT_EULA=Y
   web:
     build: .
     command: "./django_docker_startup.sh"
@@ -20,5 +29,7 @@ services:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - MSSQL_PASSWORD=mssql_arise
     depends_on:
       - db
+      - mssql
