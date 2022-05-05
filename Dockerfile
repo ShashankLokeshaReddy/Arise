@@ -3,6 +3,8 @@ FROM python:3
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 WORKDIR /code
+#COPY installations_odbc_driver.sh /code/
+#RUN installations_odbc_driver.sh
 RUN apt-get update && apt-get install -y gcc unixodbc-dev
 COPY requirements.txt /code/
 RUN pip install -r requirements.txt
