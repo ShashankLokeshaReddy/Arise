@@ -34,4 +34,7 @@ A line that is untested:
 # Installation local package
 
 Gehe in den Ornder darüber und schreibe pip install -e arise-prototype importiere das package dann mit arise_prototype
-Code for the ARISE prototype
+
+# Docker
+
+Wenn *docker build --no-cache* nicht ausreicht hilft *docker system prune -af* um alle vorherigen Images und Informationen dazu zu entfernen.
