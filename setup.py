@@ -6,5 +6,7 @@ setup(
     packages=['arise_prototype'],
     install_requires=['pandas',
                       'numpy',
-                      'datetime']
+                      'datetime',
+                      'djangorestframework',
+                      'django-cors-headers']
 )
