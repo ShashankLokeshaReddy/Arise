@@ -1,23 +1,29 @@
 <template>
+  <!--
+  <div id="nav">
+  <router-link to="/">Gantt</router-link>
+  <router-link to="table">Table</router-link>
+  
+</div>-->
   <div class="app">
-    <MachineScheduler />
-    <OrderTable />
+    <Header />
+    
+    <router-view></router-view>
+  
   </div>
   
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import MachineScheduler from './components/MachineScheduler.vue'
-import OrderTable from './components/OrderTable.vue'
+import Header from './components/Header.vue'
 
 
 export default defineComponent({
   name: 'App',
 
   components: {
-    MachineScheduler,
-    OrderTable
+    Header
 },
 
   data () {

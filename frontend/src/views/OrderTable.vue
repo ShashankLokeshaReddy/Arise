@@ -1,14 +1,19 @@
 <template>
-  <div style="align: center;">
+  <v-container fluid justify="center" align="center">
   <ag-grid-vue
-    style="width: 1500px; height: 200px;"
+    style="width: 1200px; height: 30rem;"
     class="ag-theme-alpine"
     :columnDefs="columnDefs"
     :rowData="rowData"
+    display = "flex"
     rowSelection="multiple"
+    alignItems="start"
+   
+    
   >
   </ag-grid-vue>
-</div>
+</v-container>
+
 </template>
 
 <script lang="ts">
@@ -30,12 +35,12 @@ export default {
   
   beforeMount() {
       this.columnDefs = [
-        { headerName: "Maschine", field: "resourceId", filter: true },
-        { headerName: "Kundennummer", field: "title" , filter:true},
-        { headerName: "Startzeit", field: "start", filter:true },
-        { headerName: "Endzeit", field: "end", filter:true },
-        { headerName: "Auftragsnummer", field: "AKNR", filter:true },
-        { headerName: "Schrittnummer", field: "SchrittNr", filter:true },
+        { headerName: "Maschine", field: "resourceId", type: 'rightAligned', filter: true },
+        { headerName: "Kundennummer", field: "title", type: 'rightAligned', filter:true},
+        { headerName: "Startzeit", field: "start", type: 'rightAligned', filter:true },
+        { headerName: "Endzeit", field: "end", type: 'rightAligned', filter:true },
+        { headerName: "Auftragsnummer", field: "AKNR", type: 'rightAligned', filter:true },
+        { headerName: "Schrittnummer", field: "SchrittNr", type: 'rightAligned', filter:true },
       ];
      /* this.rowData =[
         { make: "Toyota", model: "Celica", price: 35000 },
