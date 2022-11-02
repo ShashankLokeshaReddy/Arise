@@ -19,10 +19,9 @@ import InteractionPlugin from '@fullcalendar/interaction'
 import ListPlugin from '@fullcalendar/list'
 import ResourceTimelinePlugin from '@fullcalendar/resource-timeline'
 
-//var eventvar : { resourceId: string; title: string, start: any, end: any }[] = [];
 
 export default defineComponent({
-    
+     
     //props: [FullCalendar],
     components: {FullCalendar},
     data()  {
@@ -41,13 +40,37 @@ export default defineComponent({
             initialView: 'resourceTimelineDay',
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
-                left: 'prev, next today',
+                left: 'prev, next today myCustomButton',
                 center: 'title',
                 right: 'resourceTimelineMonth, resourceTimelineWeek, resourceTimelineDay',
                     },
+            customButtons: {
+                myCustomButton: {
+                text: 'speichern',
+                click: function() {
+                    alert('Der Plan wurde gespeichert!');
+                    var current_events: { resourceId : string; title: string; start: Date; end: Date; }[]
+                    //current_events = this.getEvents(); //genau hier ist das Problem, dass es scheinbar keine Events bekommt.
+                    (async () => {
+                        const rawResponse = await fetch('https://httpbin.org/post', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                                },
+                        //body: JSON.stringify(current_events)
+                                });
+                        const content = await rawResponse.json();
+
+                        console.log(content);
+                        })();
+                }
+                }
+            },
             weekends: false,
             editable: true,
             resourceAreaHeaderContent: 'Machines',
+            
             resources: [
                 {
                     id: "SL 2",

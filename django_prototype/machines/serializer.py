@@ -10,4 +10,4 @@ class MachinesSerializer(ModelSerializer):
     title = serializers.CharField(source='KndNr')
     class Meta:
         model = Machine
-        fields = ['resourceId', 'title', 'start', 'end'] #ändere end,start zu datetime, zum probieren
+        fields = ['resourceId', 'title', 'start', 'end', 'AKNR', 'SchrittNr'] #ändere end,start zu datetime, zum probieren
