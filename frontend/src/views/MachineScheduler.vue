@@ -1,7 +1,18 @@
 <template>
     <div>
+    <v-container text-align="center">
+        <v-btn 
+            align="center"
+            color="error"
+            v-on:click='planUpdate'
+            >
+            Plan generieren
+        </v-btn>
+    </v-container>
+        <v-container>
         <FullCalendar :options="calendarOptions">
          </FullCalendar>
+        </v-container>
     </div>
 </template>
 
@@ -115,13 +126,24 @@ export default defineComponent({
             },
         }
     },
+    methods:{ 
+        async planUpdate() {
+            console.log("updated")
+            var response = await fetch('http://localhost:8000/api/algorithm/naive_sorting')
+            var output : { resourceId: string; title: string; start: Date, end: Date }[] = [];
+            
+            output = await response.json()
+            console.log(output)
+        
+        },
+},
 
    async created(){
             var response = await fetch('http://localhost:8000/api/machines/')
             var output : { resourceId: string; title: string; start: Date, end: Date }[] = [];
-            
+            console.log("original")
             output = await response.json()
-     
+            console.log(output)
             /*output = [{
                "resourceId": "SL 2",
                 "title": "12403",
@@ -133,7 +155,7 @@ export default defineComponent({
             
             
             this.calendarOptions["events"] = output
-            console.log(this.calendarOptions["events"])
+            //console.log(this.calendarOptions["events"])
         }
 
 })
