@@ -13,6 +13,11 @@ or `docker-compose up`. To shutdown, open a separate terminal tab or window and 
 or `docker-compose down`
 respectively.
 
+## Starting the frontend
+Open the console and navigate into the folder `frontend/src` and type `npm run serve`. In order for this to work you need to have npm and vuejs installed. You can then access the server on the webadress displayed in the console.
+You need to have both, the frontend and the Django Server up and running for the webapp to work properly.
+
+
 ## Code Metrics
 
 If you want information about passed tests, test coverage, and linting, you can do so by creating a merge request. The
