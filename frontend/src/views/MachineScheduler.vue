@@ -8,6 +8,13 @@
             >
             Plan generieren
         </v-btn>
+        <v-btn 
+            align="end"
+            color="success"
+            v-on:click='planSaved'
+            >
+            Plan speichern
+        </v-btn>
     </v-container>
         <v-container>
         <FullCalendar :options="calendarOptions">
@@ -39,6 +46,7 @@ export default defineComponent({
         return {
             calendarOptions: {
                 plugins: [ 
+                    
                     DayGridPlugin,
                     TimegridPlugin,
                     InteractionPlugin,
@@ -120,27 +128,51 @@ export default defineComponent({
                     title: "Maschine 9"
                 }
             ],
-            events: [] as { resourceId : string; title: string; start: Date; end: Date; }[]
+            events: [] as { resourceId : string; title: string; AKNR:number; start: Date; end: Date; }[]
             
             
             },
         }
     },
-    methods:{ 
+    methods:
+    
+    { 
         async planUpdate() {
-            console.log("updated")
+            console.log("updated events")
             var response = await fetch('http://localhost:8000/api/algorithm/naive_sorting')
-            var output : { resourceId: string; title: string; start: Date, end: Date }[] = [];
-            
+            var output : { resourceId: string; title: string; AKNR:number; start: Date, end: Date }[] = [];
+            var newevents = this.calendarOptions.events
             output = await response.json()
+            this.calendarOptions["events"] = output
+
             console.log(output)
+            
+            console.log("new events")
+            console.log(newevents)
         
         },
+
+        async planSaved() {
+            var data = this.calendarOptions.events
+            
+            fetch('http://localhost:8000/api/updatedb/update', {
+                method: 'POST',
+                headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => response.json())
+                        .then(response => console.log(JSON.stringify(response)))
+        }
 },
+
+
 
    async created(){
             var response = await fetch('http://localhost:8000/api/machines/')
-            var output : { resourceId: string; title: string; start: Date, end: Date }[] = [];
+            var output : { resourceId: string; title: string; AKNR: number; start: Date, end: Date,}[] = [];
             console.log("original")
             output = await response.json()
             console.log(output)
