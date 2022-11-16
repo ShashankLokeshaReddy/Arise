@@ -6,3 +6,4 @@ datetime
 djangorestframework
 django-cors-headers
 django-import-export
+django-pandas
