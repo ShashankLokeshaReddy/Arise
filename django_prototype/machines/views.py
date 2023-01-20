@@ -1,5 +1,5 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet, ViewSet
+from rest_framework.views import APIView, View
 from rest_framework.decorators import action
 from django_pandas.io import read_frame
 from rest_framework import status
@@ -8,9 +8,13 @@ from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from .heuristics import heuristic
 import json
+from django.views.generic import TemplateView
+from rest_framework.decorators import api_view
+
 
 from .models import Machine
 from .serializer import MachinesSerializer
+from django.views.decorators.csrf import csrf_exempt
 
 
 class MachinesViewSet(ModelViewSet):
@@ -25,8 +29,15 @@ class UpdateDatabaseUpdateView(ModelViewSet):
         machines = Machine.objects.all()
         return machines
     
-    '''def update(self, request, pk):
-        pk = request.data["id"]
+    # def update(self, request, pk):
+    #     entry = Machine.objects.get(id=23)
+    #     entry.resourceId="SL 4"
+    #     entry.Start="2023-01-03T16:30:00Z"
+    #     entry.Ende="2023-01-03T16:30:00Z"
+    #     entry.save(update_fields=['resourceId','Start','Ende'])
+
+
+        '''pk = request.data["id"]
         updatedMachine = Machine.objects.get(id=pk).__dict__
         print(updatedMachine)
         serializer=MachinesSerializer(data=updatedMachine, partial=True)
@@ -81,7 +92,54 @@ class HeuristicalMachinesViewSet(ModelViewSet):
         
         response = Response(json.loads(df))
         return response
-
+    
+class Updater(ModelViewSet):
+    #@action(detail=False, methods=["post"])
+    def post(self, request, pk):
+        if request.method == "POST":
+            json_data = json.loads(request.body)
+            savedstring = ""
+            for instance in json_data:
+                serializer = MachinesSerializer(data = instance)
+                if serializer.is_valid():
+                    id = int(instance['id'])
+                    resourceId = instance['resourceId']
+                    start = instance['start']
+                    end = instance['end']
+                    print(instance)
+                    entry = Machine.objects.get(id=id)
+                    print("tt")
+                    entry.resourceId = resourceId
+                    entry.Start = start
+                    entry.Ende = end
+                    entry.save(update_fields=['resourceId','Start','Ende'])
+                    #response = Response(json.loads("Abgespeichert"))
+                    print("t")
+                    savedstring += str(instance)
+                else:
+                    return Response("Data not serializable")
+            return Response("The following got saved: " + savedstring)
+        else: return Response("You need to access via Post Request to make this view")
+        
+# @api_view(['GET', 'POST', 'PUT', 'DELETE'])
+# def updateit(request):
+#     if request.method == "POST":
+#         json_data = json.loads(request.body)
+#         for instance in json_data:
+#             serializer = MachinesSerializer(data = json_data)
+#             print(serializer)
+#             if serializer.is_valid():
+#                 print("serializer valid")
+#                 entry = Machine.objects.get(id = int(instance['id']))
+#                 print("test")
+#                 entry.resourceId = instance['resourceId']
+#                 entry.Start = instance['start']
+#                 entry.Ende = instance['end']
+#                 entry.save(update_fields=['resourceId','Start','Ende'])
+#                 #response = Response(json.loads("Abgespeichert"))
+#                 print("t")
+#                 return Response("The following got saved: " + str(instance))
+#         else: return Response("Data not serializable")
 
 
 
