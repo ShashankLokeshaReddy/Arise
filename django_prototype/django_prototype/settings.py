@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'import_export',
-    'machines'
+    'machines',
+    'details',
+    'jobs'
     
 ]
 
