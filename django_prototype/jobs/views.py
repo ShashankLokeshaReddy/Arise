@@ -11,7 +11,7 @@ from .serializer import JobsSerializer
 import pandas as pd
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 parent_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -24,6 +24,7 @@ import signal
 import psutil
 import multiprocessing
 import csv
+import re
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework import status
@@ -48,7 +49,7 @@ def delete_all_elements(my_list):
 class JobsViewSet(ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobsSerializer
-    lookup_field = 'Job_ID'
+    lookup_field = 'AKNR'
     pid = None
     parser_classes = (MultiPartParser,)
 
@@ -75,7 +76,7 @@ class JobsViewSet(ModelViewSet):
         jobs_data = request.data["jobs_data"] # assuming the request payload contains a list of jobs
         for job_data in jobs_data:
             try:
-                job_instance = Job.objects.get(job=job_data['Job_ID'])
+                job_instance = Job.objects.get(job=job_data['AKNR'])
                 job_data['Start'] = datetime.strptime(job_data['Start'], date_format)
                 job_data['Ende'] = datetime.strptime(job_data['Ende'], date_format)
                 serializer = self.get_serializer(job_instance, data=job_data, partial=True)
@@ -98,25 +99,45 @@ class JobsViewSet(ModelViewSet):
 
         for job_data in jobs_data:
             job_instance = Job()
-            job_instance.Job_ID = job_data['Job_ID']
-            job_instance.FEFCO_Teil = job_data['FEFCO_Teil']
-            job_instance.ArtNr_Teil = job_data['ArtNr_Teil']
-            job_instance.ID_DRUCK = job_data['ID_DRUCK']
-            job_instance.BOGEN_LAENGE_BRUTTO = job_data['BOGEN_LAENGE_BRUTTO']
-            job_instance.BOGEN_BREITE_BRUTTO = job_data['BOGEN_BREITE_BRUTTO']
-            job_instance.MaschNr = job_data['MaschNr']
-            job_instance.Start = parse_datetime(job_data['Start']) if job_data['Start'] else None
-            job_instance.Ende = parse_datetime(job_data['Ende']) if job_data['Ende'] else None
-            job_instance.Ruestzeit_Ist = job_data['Ruestzeit_Ist']
-            job_instance.Ruestzeit_Soll = job_data['Ruestzeit_Soll']
-            job_instance.Laufzeit_Ist = job_data['Laufzeit_Ist']
-            job_instance.Laufzeit_Soll = job_data['Laufzeit_Soll']
-            job_instance.Nutzen = job_data['Nutzen']
-            job_instance.Menge_Soll = job_data['Menge_Soll']
-            job_instance.Menge_Ist = job_data['Menge_Ist']
-            job_instance.Bemerkung = job_data['Bemerkung']
-            # job_instance.LTermin = job_data['LTermin']
-            # job_instance.Kunde = job_data['Kunde']
+            job_instance.FEFCO_Teil = job_data.get('FEFCO_Teil')
+            job_instance.ArtNr_Teil = job_data.get('ArtNr_Teil')
+            job_instance.ID_DRUCK = job_data.get('ID_DRUCK')
+            if str(job_data.get('Druckflaeche')) != 'NULL' and str(job_data.get('Druckflaeche')) != '':
+                job_instance.Druckflaeche = job_data.get('Druckflaeche')
+            job_instance.BOGEN_LAENGE_BRUTTO = job_data.get('BOGEN_LAENGE_BRUTTO')
+            job_instance.BOGEN_BREITE_BRUTTO = job_data.get('BOGEN_BREITE_BRUTTO')
+            job_instance.Maschine = job_data.get('Maschine')
+            job_instance.Start = parse_datetime(job_data.get('Start')) if job_data.get('Start') else None
+            job_instance.Ende = parse_datetime(job_data.get('Ende')) if job_data.get('Ende') else None
+            job_instance.Ruestzeit_Ist = job_data.get('Ruestzeit_Ist')
+            job_instance.Ruestzeit_Soll = job_data.get('Ruestzeit_Soll')
+            job_instance.Laufzeit_Ist = job_data.get('Laufzeit_Ist')
+            job_instance.Laufzeit_Soll = job_data.get('Laufzeit_Soll')
+            job_instance.Zeit_Ist = job_data.get('Zeit_Ist')
+            job_instance.Zeit_Soll = job_data.get('Zeit_Soll')
+            job_instance.Werkzeug_Nutzen = job_data.get('Werkzeug_Nutzen')
+            job_instance.Bestell_Nutzen = job_data.get('Bestell_Nutzen')
+            job_instance.Menge_Soll = job_data.get('Menge_Soll')
+            job_instance.Menge_Ist = job_data.get('Menge_Ist')
+            job_instance.Bemerkung = job_data.get('Bemerkung')
+            job_instance.LTermin = parse_datetime(job_data.get('LTermin')) if job_data.get('LTermin') else None
+            job_instance.KndNr = job_data.get('KndNr')
+            job_instance.Suchname = job_data.get('Suchname')
+            job_instance.AKNR = job_data.get('AKNR')
+            job_instance.TeilNr = job_data.get('TeilNr')
+            job_instance.SchrittNr = job_data.get('SchrittNr')
+            job_instance.Summe_Minuten = job_data.get('Summe_Minuten')
+            job_instance.ID_Maschstatus = job_data.get('ID_Maschstatus')
+            job_instance.Maschstatus = job_data.get('Maschstatus')
+
+            lieferdatum = job_data.get('Lieferdatum_Rohmaterial')
+            date_regex = r'\d{1,2}/\d{1,2}/\d{4}'  # dd.mm.yyyy pattern
+            if re.match(date_regex, str(lieferdatum)):
+                l_d = datetime.strptime(str(lieferdatum), "%m/%d/%Y").strftime("%Y-%m-%d 00:00:00.000")
+                print("l_d",l_d)
+                job_instance.Lieferdatum_Rohmaterial = parse_datetime(l_d)
+
+            job_instance.BE_Erledigt = job_data.get('BE_Erledigt')
             job_instance.save()
 
         message = "Upload successful"
@@ -151,11 +172,6 @@ class JobsViewSet(ModelViewSet):
     def run_deadline_first(self, request):
         # logic for deadline first here, once SJF is done, schedules need to be written back into the Jobs db
         return Response({'message': 'Early Deadline First completed.'})
-
-    @action(detail=False, methods=['post'])
-    def run_random(self, request):
-        # logic for random here, once SJF is done, schedules need to be written back into the Jobs db
-        return Response({'message': 'Release Date Scheduling completed.'})
 
     @action(detail=False, methods=['post'])
     def stop_genetic_optimizer(self, request):

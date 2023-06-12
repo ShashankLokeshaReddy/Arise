@@ -88,7 +88,7 @@ export default defineComponent({
             eventResize: (info) => {
                 var resources = info.event.getResources();
                 const jobs_data = [{"Job_ID": info.event.title, "Start": info.event.start, "Ende": info.event.end, "MaschNr": resources[0]["title"]}];
-                axios.post('http://localhost:8000/api/jobs/setSchedule/', {jobs_data:jobs_data})
+                axios.post('http://localhost:8001/api/jobs/setSchedule/', {jobs_data:jobs_data})
                 .then(response => {
                     // Handle successful response
                     console.log(response.data)
@@ -111,7 +111,7 @@ export default defineComponent({
                     // If the selected machine is allowed, update the job schedule
                     const jobs_data = [{"Job_ID": info.event.title, "Start": info.event.start, "Ende": info.event.end, "MaschNr": MaschNr}];
 
-                    axios.post('http://localhost:8000/api/jobs/setSchedule/', {jobs_data:jobs_data})
+                    axios.post('http://localhost:8001/api/jobs/setSchedule/', {jobs_data:jobs_data})
                     .then(response => {
                         // Handle successful response
                         console.log(response.data)
@@ -138,7 +138,7 @@ export default defineComponent({
     },
 
    async created(){
-            var response = await fetch('http://localhost:8000/api/jobs/getSchedule')
+            var response = await fetch('http://localhost:8001/api/jobs/getSchedule')
             var output_resp = await response.json()
             var status = output_resp["Status"]
             var output : { MaschNr: string; Job_ID: string; Start: Date, Ende: Date }[] = [];

@@ -15,7 +15,7 @@ services:
       - .:/code
       - ./data:/code/tmp_data
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres

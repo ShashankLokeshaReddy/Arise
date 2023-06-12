@@ -4,7 +4,6 @@
       <v-col align="center" class="mb-4">
         <v-btn class="bordered flex-grow-1 mr-2" @click="runSJF">SJF</v-btn>
         <v-btn class="bordered flex-grow-1 mr-2" @click="runDeadlineFirst">Early Deadline</v-btn>
-        <v-btn class="bordered flex-grow-1" @click="runRandom">Random</v-btn>
       </v-col>
       <v-col align="center" class="mb-4">
         <v-btn class="bordered flex-grow-1 mr-2" @click="runPLOptimizer">Preference Optimizer</v-btn>
@@ -66,29 +65,40 @@ export default {
   methods: {
     fillTable() {
       this.columnDefs = [
-        { headerName: "Job_ID", field: "Job_ID", type: 'rightAligned', filter: true },
-        { headerName: "FEFCO_Teil", field: "FEFCO_Teil", type: 'rightAligned', filter:true},
+        { headerName: "FEFCO_Teil", field: "FEFCO_Teil", type: 'rightAligned', filter:true },
         { headerName: "ArtNr_Teil", field: "ArtNr_Teil", type: 'rightAligned', filter:true },
         { headerName: "ID_DRUCK", field: "ID_DRUCK", type: 'rightAligned', filter:true },
         { headerName: "Druckflaeche", field: "Druckflaeche", type: 'rightAligned', filter:true },
         { headerName: "BOGEN_LAENGE_BRUTTO", field: "BOGEN_LAENGE_BRUTTO", type: 'rightAligned', filter:true },
         { headerName: "BOGEN_BREITE_BRUTTO", field: "BOGEN_BREITE_BRUTTO", type: 'rightAligned', filter:true },
-        { headerName: "MaschNr", field: "MaschNr", type: 'rightAligned', filter:true },
-        { headerName: "Start", field: "Start", type: 'rightAligned', filter:true },
-        { headerName: "Ende", field: "Ende", type: 'rightAligned', filter:true },
+        { headerName: "Maschine", field: "Maschine", type: 'rightAligned', filter:true },
         { headerName: "Ruestzeit_Ist", field: "Ruestzeit_Ist", type: 'rightAligned', filter:true },
         { headerName: "Ruestzeit_Soll", field: "Ruestzeit_Soll", type: 'rightAligned', filter:true },
         { headerName: "Laufzeit_Ist", field: "Laufzeit_Ist", type: 'rightAligned', filter:true },
         { headerName: "Laufzeit_Soll", field: "Laufzeit_Soll", type: 'rightAligned', filter:true },
-        { headerName: "Nutzen", field: "Nutzen", type: 'rightAligned', filter:true },
+        { headerName: "Zeit_Ist", field: "Zeit_Ist", type: 'rightAligned', filter:true },
+        { headerName: "Zeit_Soll", field: "Zeit_Soll", type: 'rightAligned', filter:true },
+        { headerName: "Werkzeug_Nutzen", field: "Werkzeug_Nutzen", type: 'rightAligned', filter:true },
+        { headerName: "Bestell_Nutzen", field: "Bestell_Nutzen", type: 'rightAligned', filter:true },
         { headerName: "Menge_Soll", field: "Menge_Soll", type: 'rightAligned', filter:true },
         { headerName: "Menge_Ist", field: "Menge_Ist", type: 'rightAligned', filter:true },
         { headerName: "Bemerkung", field: "Bemerkung", type: 'rightAligned', filter:true },
         { headerName: "LTermin", field: "LTermin", type: 'rightAligned', filter:true },
-        { headerName: "Kunde", field: "Kunde", type: 'rightAligned', filter:true }
+        { headerName: "KndNr", field: "KndNr", type: 'rightAligned', filter:true },
+        { headerName: "Suchname", field: "Suchname", type: 'rightAligned', filter:true },
+        { headerName: "AKNR", field: "AKNR", type: 'rightAligned', filter:true },
+        { headerName: "TeilNr", field: "TeilNr", type: 'rightAligned', filter:true },
+        { headerName: "SchrittNr", field: "SchrittNr", type: 'rightAligned', filter:true },
+        { headerName: "Start", field: "Start", type: 'rightAligned', filter:true },
+        { headerName: "Ende", field: "Ende", type: 'rightAligned', filter:true },
+        { headerName: "Summe_Minuten", field: "Summe_Minuten", type: 'rightAligned', filter:true },
+        { headerName: "ID_Maschstatus", field: "ID_Maschstatus", type: 'rightAligned', filter:true },
+        { headerName: "Maschstatus", field: "Maschstatus", type: 'rightAligned', filter:true },
+        { headerName: "Lieferdatum_Rohmaterial", field: "Lieferdatum_Rohmaterial", type: 'rightAligned', filter:true },
+        { headerName: "BE_Erledigt", field: "BE_Erledigt", type: 'rightAligned', filter:true }, 
       ];
 
-      fetch("http://localhost:8000/api/jobs/getSchedule")
+      fetch("http://localhost:8001/api/jobs/getSchedule")
         .then((res) => res.json())
         .then((rowData) => (this.rowData = rowData["Table"]))
         .catch((error) => console.log(error));
@@ -100,7 +110,7 @@ export default {
       }
       this.isLoading = true; // show loading icon
       axios
-        .post("http://localhost:8000/api/jobs/run_preference_learning_optimizer/")
+        .post("http://localhost:8001/api/jobs/run_preference_learning_optimizer/")
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
@@ -117,7 +127,7 @@ export default {
       }
       this.isLoading = true; // show loading icon
       axios
-        .post("http://localhost:8000/api/jobs/run_sjf/")
+        .post("http://localhost:8001/api/jobs/run_sjf/")
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
@@ -134,24 +144,7 @@ export default {
       }
       this.isLoading = true; // show loading icon
       axios
-        .post("http://localhost:8000/api/jobs/run_deadline_first/")
-        .then((response) => {
-          console.log(response.data);
-          this.isLoading = false;
-          this.fillTable();
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    },
-    runRandom() {
-      const confirmed = window.confirm("Möchten Sie den zufälligen Algorithmus ausführen?");
-      if (!confirmed) {
-        return;
-      }
-      this.isLoading = true; // show loading icon
-      axios
-        .post("http://localhost:8000/api/jobs/run_random/")
+        .post("http://localhost:8001/api/jobs/run_deadline_first/")
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
@@ -168,7 +161,7 @@ export default {
       }
       this.isLoading = true; // show loading icon
       axios
-        .post("http://localhost:8000/api/jobs/deleteJobs/")
+        .post("http://localhost:8001/api/jobs/deleteJobs/")
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
@@ -181,7 +174,7 @@ export default {
     },
     stopProcess() {
       axios
-        .post("http://localhost:8000/api/jobs/stop_genetic_optimizer/")
+        .post("http://localhost:8001/api/jobs/stop_genetic_optimizer/")
         .then((response) => {
           console.log(response.data);
           this.fillTable();
@@ -197,7 +190,7 @@ export default {
       const formData = new FormData();
       formData.append('file', this.file);
       this.isLoading = true;
-      axios.post('http://localhost:8000/api/jobs/uploadCSV/', formData)
+      axios.post('http://localhost:8001/api/jobs/uploadCSV/', formData)
         .then(response => {
           console.log(response.data);
           this.isLoading = false;
