@@ -31,20 +31,40 @@ from rest_framework import status
 from django.utils.dateparse import parse_datetime
 from decimal import Decimal
 
-# def format_duration(duration):
-#     duration_seconds = duration.total_seconds()
-#     if duration_seconds < 86400:
-#         duration_formatted = str(timedelta(seconds=duration_seconds))
-#     else:
-#         duration_formatted = str(timedelta(seconds=duration_seconds)).replace(' days, ', ' days, ')
-#     return duration_formatted
-
 pid = []
+holidays = []
 
 def delete_all_elements(my_list):
     for i in range(len(my_list) - 1, -1, -1):
         del my_list[i]
     return my_list
+
+def format_ind_time(date_str):
+    # extract timezone offset from string
+    match = re.search(r'GMT([\+\-]\d{4})', date_str)
+    if not match:
+        raise ValueError('Invalid date string: no timezone offset found',date_str)
+    tz_offset_str = match.group(1)
+    # convert timezone offset string to datetime.timedelta object
+    tz_offset = timedelta(hours=int(tz_offset_str[1:3]), minutes=int(tz_offset_str[3:5]))
+    # remove timezone information from string
+    date_str = re.sub(r'GMT[\+\-]\d{4}\s+\(.+\)', '', date_str).strip()
+
+    # parse datetime string and add timezone offset
+    date_obj = datetime.strptime(date_str, '%a %b %d %Y %H:%M:%S')
+    date_obj -= tz_offset
+
+    # format datetime object as ISO 8601 string
+    final_date_str = date_obj.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    # print(final_date_str)
+    return final_date_str
+
+def is_valid_datetime(datetime_str):
+    try:
+        datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%SZ')
+        return True
+    except ValueError:
+        return False
 
 class JobsViewSet(ModelViewSet):
     queryset = Job.objects.all()
@@ -76,7 +96,7 @@ class JobsViewSet(ModelViewSet):
         jobs_data = request.data["jobs_data"] # assuming the request payload contains a list of jobs
         for job_data in jobs_data:
             try:
-                job_instance = Job.objects.get(job=job_data['AKNR'])
+                job_instance = Job.objects.get(AKNR=job_data['AKNR'])
                 job_data['Start'] = datetime.strptime(job_data['Start'], date_format)
                 job_data['Ende'] = datetime.strptime(job_data['Ende'], date_format)
                 serializer = self.get_serializer(job_instance, data=job_data, partial=True)
@@ -183,3 +203,20 @@ class JobsViewSet(ModelViewSet):
             pass
         delete_all_elements(pid)
         return Response({'message': 'Could not find running PL optimizer.'}) 
+
+    # updates a jobs
+    @action(detail=False, methods=['post'])
+    def setInd(self, request):
+        job_data = request.data.copy()
+        print("job_data",job_data)
+        job_instance = Job.objects.get(AKNR=job_data['AKNR'])
+        print("job_instance",job_instance)
+        if 'Start' in job_data and 'Ende' in job_data:
+            job_data['Start'] = job_data['Start']
+            job_data['Ende'] = job_data['Ende']
+
+        serializer = self.get_serializer(job_instance, data=job_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        message = "Der Auftrag wurde erfolgreich gespeichert"
+        return Response({"message": message}, status=status.HTTP_200_OK)

@@ -2,17 +2,18 @@
   <v-container>
     <v-row align="center">
       <v-col align="center" class="mb-4">
-        <v-btn class="bordered flex-grow-1 mr-2" @click="runSJF">SJF</v-btn>
-        <v-btn class="bordered flex-grow-1 mr-2" @click="runDeadlineFirst">Early Deadline</v-btn>
+        <button class="bordered flex-grow-1 mr-2"  @click="runSJF">SJF</button>
+        <button class="bordered flex-grow-1 mr-2"  @click="runDeadlineFirst">Early Deadline</button>
       </v-col>
       <v-col align="center" class="mb-4">
-        <v-btn class="bordered flex-grow-1 mr-2" @click="runPLOptimizer">Preference Optimizer</v-btn>
-        <v-btn class="bordered flex-grow-1 mr-2" color="error" @click="stopProcess">Stop Process</v-btn>
+        <button class="bordered flex-grow-1 mr-2"  @click="runPLOptimizer">Preference Optimizer</button>
+        <button class="bordered flex-grow-1 mr-2"  @click="stopProcess">PL stoppen</button>
+        <button class="bordered flex-grow-1 mr-2"  @click="saveJobs">Save Job Orders</button>
       </v-col>
       <v-col align="center" class="mb-4">
-        <input type="file" ref="fileInput" @change="handleFileUpload"/>
-        <v-btn class="bordered" @click="upload">Upload Job Orders</v-btn>
-        <v-btn class="bordered" color="error" @click="deleteJobs">Delete Job Orders</v-btn>
+        <input type="file" ref="fileInput"  @change="handleFileUpload"/>
+        <button class="bordered"  @click="upload">Arbeitsaufträge hochladen</button>
+        <button class="bordered"  @click="deleteJobs">Arbeitsaufträge löschen</button>
       </v-col>
     </v-row>
   </v-container>
@@ -21,7 +22,7 @@
     <v-progress-circular
       :size="70"
       :width="7"
-      color="primary"
+      color=blue
       indeterminate
     ></v-progress-circular>
   </v-container>
@@ -63,8 +64,84 @@ export default {
   },
 
   methods: {
+    saveJobs() {
+      const confirmed = window.confirm("Möchten Sie alle Jobs in einer CSV-Datei speichern?");
+      if (!confirmed) {
+        return;
+      }
+      this.isLoading = true; // show loading icon
+      axios
+        .post("http://localhost:8001/api/jobs/savejobstoCSV/")
+        .then((response) => {
+          console.log(response.data);
+          this.isLoading = false;
+          window.alert(response.data.message);
+          this.fillTable();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
     fillTable() {
+      // Define saveButtonRenderer
+      const saveButtonRenderer = params => {
+        const button = document.createElement('button')
+        button.innerText = 'Save'
+        button.addEventListener('click', () => {
+          const rowData = params.node.data
+          const jobs_data = {
+            FEFCO_Teil: rowData.FEFCO_Teil,
+            ArtNr_Teil: rowData.ArtNr_Teil,
+            ID_DRUCK: rowData.ID_DRUCK,
+            Druckflaeche: rowData.Druckflaeche,
+            BOGEN_LAENGE_BRUTTO: rowData.BOGEN_LAENGE_BRUTTO,
+            BOGEN_BREITE_BRUTTO: rowData.BOGEN_BREITE_BRUTTO,
+            Maschine: rowData.Maschine,
+            Ruestzeit_Ist: rowData.Ruestzeit_Ist,
+            Ruestzeit_Soll: rowData.Ruestzeit_Soll,
+            Laufzeit_Ist: rowData.Laufzeit_Ist,
+            Laufzeit_Soll: rowData.Laufzeit_Soll,
+            Zeit_Ist: rowData.Zeit_Ist,
+            Zeit_Soll: rowData.Zeit_Soll,
+            Werkzeug_Nutzen: rowData.Werkzeug_Nutzen,
+            Bestell_Nutzen: rowData.Bestell_Nutzen,
+            Menge_Soll: rowData.Menge_Soll,
+            Menge_Ist: rowData.Menge_Ist,
+            Bemerkung: rowData.Bemerkung,
+            LTermin: rowData.LTermin,
+            KndNr: rowData.KndNr,
+            Laufzeit_Soll: rowData.Laufzeit_Soll,
+            Suchname: rowData.Suchname,
+            TeilNr: rowData.TeilNr,
+            SchrittNr: rowData.SchrittNr,
+            Start: rowData.Start,
+            Ende: rowData.Ende,
+            Summe_Minuten: rowData.Summe_Minuten,
+            ID_Maschstatus: rowData.ID_Maschstatus,
+            Maschstatus: rowData.Maschstatus,
+            Lieferdatum_Rohmaterial: rowData.Lieferdatum_Rohmaterial,
+            BE_Erledigt: rowData.BE_Erledigt     
+          };
+
+          const formData = new FormData();
+          for (let key in jobs_data) {
+          formData.append(key, jobs_data[key]);
+          }
+          
+          axios.post('http://localhost:8001/api/jobs/setInd_Table/', formData)
+          .then(response => {
+              console.log(response.data);
+          })
+          .catch(error => {
+              console.log(error);
+          });
+
+        })
+        return button
+      }
+
       this.columnDefs = [
+        { headerName: "AKNR", field: "AKNR", type: 'rightAligned', filter:true },
         { headerName: "FEFCO_Teil", field: "FEFCO_Teil", type: 'rightAligned', filter:true },
         { headerName: "ArtNr_Teil", field: "ArtNr_Teil", type: 'rightAligned', filter:true },
         { headerName: "ID_DRUCK", field: "ID_DRUCK", type: 'rightAligned', filter:true },
@@ -86,7 +163,6 @@ export default {
         { headerName: "LTermin", field: "LTermin", type: 'rightAligned', filter:true },
         { headerName: "KndNr", field: "KndNr", type: 'rightAligned', filter:true },
         { headerName: "Suchname", field: "Suchname", type: 'rightAligned', filter:true },
-        { headerName: "AKNR", field: "AKNR", type: 'rightAligned', filter:true },
         { headerName: "TeilNr", field: "TeilNr", type: 'rightAligned', filter:true },
         { headerName: "SchrittNr", field: "SchrittNr", type: 'rightAligned', filter:true },
         { headerName: "Start", field: "Start", type: 'rightAligned', filter:true },
@@ -102,8 +178,8 @@ export default {
         .then((res) => res.json())
         .then((rowData) => (this.rowData = rowData["Table"]))
         .catch((error) => console.log(error));
-    }
-    runPLOptimizer() {
+    },
+    runGeneticOptimizer() {
       const confirmed = window.confirm("Möchten Sie den genetischen Optimierer ausführen?");
       if (!confirmed) {
         return;
@@ -137,6 +213,7 @@ export default {
           console.log(error);
         });
     },
+
     runDeadlineFirst() {
       const confirmed = window.confirm("Möchten Sie den Early Deadline-Algorithmus ausführen?");
       if (!confirmed) {
@@ -154,8 +231,9 @@ export default {
           console.log(error);
         });
     },
+
     deleteJobs() {
-      const confirmed = window.confirm("Would you like to delete all jobs?");
+      const confirmed = window.confirm("Möchten Sie alle Jobs löschen?");
       if (!confirmed) {
         return;
       }
@@ -174,7 +252,7 @@ export default {
     },
     stopProcess() {
       axios
-        .post("http://localhost:8001/api/jobs/stop_genetic_optimizer/")
+        .post("http://localhost:8001/api/jobs/stop_PL_optimizer/")
         .then((response) => {
           console.log(response.data);
           this.fillTable();
@@ -208,30 +286,30 @@ export default {
 </script>
 
 <style>
-  button.v-btn {
+  button {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 6px 12px; /* smaller padding */
     font-size: 12px; /* smaller font size */
     font-weight: 500;
     text-transform: uppercase;
-    color: #333;
-    background-color: #fff;
+    color: #000000;
+    background-color: #F1F1F1;
   }
 
-  button.v-btn:hover {
+  button:hover {
     border-color: #999;
-    color: #666;
-    background-color: #f5f5f5;
+    color: blue;
+    background-color: #F1F1F1;
   }
 
-  button.v-btn:active,
-  button.v-btn:focus {
+  button:active,
+  button:focus {
     outline: none;
     box-shadow: none;
   }
 
-  label.v-btn {
+  label {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 6px 12px; /* smaller padding */
@@ -242,15 +320,16 @@ export default {
     background-color: #fff;
   }
 
-  label.v-btn:hover {
+  label:hover {
     border-color: #999;
     color: #666;
     background-color: #f5f5f5;
   }
 
-  label.v-btn:active,
-  label.v-btn:focus {
+  label:active,
+  label:focus {
     outline: none;
     box-shadow: none;
   }
 </style>
+

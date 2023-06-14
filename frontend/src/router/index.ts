@@ -1,6 +1,8 @@
 import { createWebHistory, createRouter } from "vue-router";
 import MachineScheduler from "@/views/MachineScheduler.vue";
 import OrderTable from "@/views/OrderTable.vue";
+import ProductionJobScheduler from "@/views/ProductionJobScheduler.vue";
+import BackgroundJobScheduler from "@/views/BackgroundJobScheduler.vue";
 
 const routes = [
   {
@@ -12,6 +14,16 @@ const routes = [
     path: "/table",
     name: "OrderTable",
     component: OrderTable,
+  },
+  {
+    path: "/production",
+    name: "Production",
+    component: ProductionJobScheduler,
+  },
+  {
+    path: "/background",
+    name: "Background",
+    component: BackgroundJobScheduler,
   },
 ];
 

@@ -1,15 +1,13 @@
 <template>
     <div>
         <FullCalendar ref="machinecalendar" :options="calendarOptions">
-         </FullCalendar>
+        </FullCalendar>
     </div>
 </template>
 
 <script lang="ts">
 
-
 import { defineComponent } from 'vue'
-
 import '@fullcalendar/core/vdom'
 import FullCalendar from '@fullcalendar/vue3'
 import DayGridPlugin from '@fullcalendar/daygrid'
@@ -18,6 +16,7 @@ import InteractionPlugin from '@fullcalendar/interaction'
 import ListPlugin from '@fullcalendar/list'
 import ResourceTimelinePlugin from '@fullcalendar/resource-timeline'
 import axios from 'axios'
+import moment from 'moment';
 
 export default defineComponent({
      
@@ -27,46 +26,91 @@ export default defineComponent({
         return {
             calendarApi: null,
             calendarOptions: {
-                plugins: [ 
-                    DayGridPlugin,
-                    TimegridPlugin,
-                    InteractionPlugin,
-                    ListPlugin,
-                    ResourceTimelinePlugin,
+            plugins: [ 
+                DayGridPlugin,
+                TimegridPlugin,
+                InteractionPlugin,
+                ListPlugin,
+                ResourceTimelinePlugin,
             ],
             selectOverlap: false,
             eventOverlap: false,
             eventMaxStack: 3,
             slotDuration: '00:05:00',
+            resourceAreaWidth: "10%",
+            scrollTimeReset: false,
+            slotLabelContent: ({ date }) => {
+                const hour = date.getHours();
+                const minute = date.getMinutes();
+                const startHour = 0;
+                const endHour = 24;
+            },
+            slotLabelClassNames: ({ date, isLabel }) => {
+                const hour = date.getHours();
+                const classNames = ["slot-label"];
+                const formattedDate = date.toISOString().substring(0, 10);
+                const formattedDate_substr = date.toISOString().substring(5, 10);
+                if ((formattedDate_substr >= '12-23' && formattedDate_substr <= '12-31')) {
+                    classNames.push("holiday-non-operating-hours");
+                } else if ( ([0, 6].includes(date.getDay())) ) {
+                    classNames.push("weekend-non-operating-hours");
+                } else {
+                    classNames.push("operating-hours");
+                }
+                
+                if (isLabel) {
+                    classNames.push("date-label");
+                }
+
+                return classNames.join(" ");
+            },
+            slotLaneClassNames: ({ date, isLabel }) => {
+                const hour = date.getHours();
+                const classNames = ["slot-label"];
+                const formattedDate = date.toISOString().substring(0, 10);
+                const formattedDate_substr = date.toISOString().substring(5, 10);
+                if ((formattedDate_substr >= '12-23' && formattedDate_substr <= '12-31')) {
+                    classNames.push("holiday-non-operating-hours");
+                } else if ( ([0, 6].includes(date.getDay())) ) {
+                    classNames.push("weekend-non-operating-hours");
+                } else {
+                    classNames.push("operating-hours");
+                }
+                
+                if (isLabel) {
+                    classNames.push("date-label");
+                }
+
+                return classNames.join(" ");
+            },
             locale: "ger",
             initialView: 'resourceTimelineDay',
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
                 left: 'prev next today myCustomButton',
                 center: 'title',
-                right: 'resourceTimelineMonth resourceTimelineWeek resourceTimelineDay',
-                    },
+                right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay',
+            },
             customButtons: {
                 myCustomButton: {
-                text: 'speichern',
-                click: function() {
-                    alert('Der Plan wurde gespeichert!');
-                    var current_events: { MaschNr : string; title: string; start: Date; end: Date; }[]
-                    //current_events = this.getEvents(); //genau hier ist das Problem, dass es scheinbar keine Events bekommt.
-                    (async () => {
-                        const rawResponse = await fetch('https://httpbin.org/post', {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                                },
-                        //body: JSON.stringify(current_events)
-                                });
-                        const content = await rawResponse.json();
-
-                        console.log(content);
-                        })();
-                }
+                    text: 'speichern',
+                    click: function() {
+                        const confirmed = window.confirm("Möchten Sie alle Jobs in einer CSV-Datei speichern?");
+                        if (!confirmed) {
+                            return;
+                        }
+                        axios
+                            .post("http://localhost:8001/api/jobs/savejobstoCSV/")
+                            .then((response) => {
+                            console.log(response.data);
+                            this.isLoading = false;
+                            window.alert(response.data.message);
+                            this.fillTable();
+                            })
+                            .catch((error) => {
+                                console.log(error);
+                            });
+                    }
                 }
             },
             weekends: true,
@@ -75,7 +119,7 @@ export default defineComponent({
             resourceAreaColumns: [
                 {
                 field: 'title',
-                headerContent: 'Machines'
+                headerContent: 'Maschinen'
                 }
             ],
 
@@ -86,45 +130,84 @@ export default defineComponent({
                 info.el.style.color = "white";
             },
             eventResize: (info) => {
-                var resources = info.event.getResources();
-                const jobs_data = [{"Job_ID": info.event.title, "Start": info.event.start, "Ende": info.event.end, "MaschNr": resources[0]["title"]}];
-                axios.post('http://localhost:8001/api/jobs/setSchedule/', {jobs_data:jobs_data})
-                .then(response => {
-                    // Handle successful response
-                    console.log(response.data)
-                })
-                .catch(error => {
-                    // Handle error
-                    console.log(error)
-                });
-            },
-            eventDrop: (info) => {
                 // Get the selected machine
                 var resources = info.event.getResources();
-                var MaschNr = resources[0]["title"];
-                
+                var selectedMachine = resources[0]["title"];
                 var machines = info.event.extendedProps.machines;
                 var allowedMachines = machines.split(',');
                 
                 // Check whether the selected machine is allowed
-                if (allowedMachines.includes(MaschNr)) {
-                    // If the selected machine is allowed, update the job schedule
-                    const jobs_data = [{"Job_ID": info.event.title, "Start": info.event.start, "Ende": info.event.end, "MaschNr": MaschNr}];
+                if (allowedMachines.includes(selectedMachine)) {
+                    const start_s = new Date(info.event.start);
+                    const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                    const end_s = new Date(info.event.end);
+                    const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    axios.post('http://localhost:8001/api/jobs/setSchedule/', {jobs_data:jobs_data})
+                    const jobs_data = {
+                        AKNR: info.event.title,
+                        Start: startISOString,
+                        Ende: endISOString,
+                        Maschine: selectedMachine
+                    };
+
+                    const formData = new FormData();
+                    for (let key in jobs_data) {
+                        formData.append(key, jobs_data[key]);
+                    }
+                    console.log("jobs_data",jobs_data)
+                    console.log("formData",formData)
+                    axios.post('http://localhost:8001/api/jobs/setInd/', formData)
                     .then(response => {
-                        // Handle successful response
-                        console.log(response.data)
+                        console.log(response.data);
                     })
                     .catch(error => {
-                        // Handle error
-                        console.log(error)
+                        console.log(error);
                     });
-                } else {
+                } 
+                else {
                     // If the selected machine is not allowed, revert the event to its original position
                     info.revert();
-                    alert('Cannot drop event as it has constraints to run on following machines: ' + info.event.extendedProps.machines);
+                    alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                 }
+            },
+            eventDrop: (info) => {
+            // Get the selected machine
+            var resources = info.event.getResources();
+            var selectedMachine = resources[0]["title"];
+            var machines = info.event.extendedProps.machines;
+            var allowedMachines = machines.split(',');
+
+            // Check whether the selected machine is allowed
+            if (allowedMachines.includes(selectedMachine)) {
+                const start_s = new Date(info.event.start);
+                const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                const end_s = new Date(info.event.end);
+                const endISOString = end_s.toISOString().substring(0, 19) + "Z";
+                const jobs_data = {
+                    AKNR: info.event.title,
+                    Start: startISOString,
+                    Ende: endISOString,
+                    Maschine: selectedMachine
+                };
+
+                const formData = new FormData();
+                for (let key in jobs_data) {
+                    formData.append(key, jobs_data[key]);
+                }
+    
+                axios.post('http://localhost:8001/api/jobs/setInd/', formData)
+                .then(response => {
+                    console.log(response.data);
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+            } 
+            else {
+                // If the selected machine is not allowed, revert the event to its original position
+                info.revert();
+                alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
+            }
             },
             mounted() {
                 this.$nextTick(() => {
@@ -136,56 +219,55 @@ export default defineComponent({
             },
         }
     },
-
-   async created(){
-            var response = await fetch('http://localhost:8001/api/jobs/getSchedule')
-            var output_resp = await response.json()
-            var status = output_resp["Status"]
-            var output : { MaschNr: string; Job_ID: string; Start: Date, Ende: Date }[] = [];
-            output = output_resp["Table"]
-            
-            var events_var = []
-            for (var i = 0; i < output.length; ++i) {
-                if(output[i]["Ende"]===null){
-                    output[i]["Ende"] = output[i]["end"]
+    async created(){
+        var response = await fetch('http://localhost:8001/api/jobs/getSchedule')
+        var output_resp = await response.json()
+        var status = output_resp["Status"]
+        var output : { Maschine: string; machines: string; AKNR: string; item: string; Start: Date, Ende: Date }[] = [];
+        output = output_resp["Table"]
+        
+        var events_var = []
+        for (var i = 0; i < output.length; ++i) {
+            if(output[i]["Ende"]===null){
+                output[i]["Ende"] = output[i]["end"]
+            }
+            var temp_event = {
+                "resourceId":output[i]["Maschine"],
+                "title":output[i]["AKNR"],
+                "start":output[i]["Start"],
+                "end":output[i]["Ende"],
+                "eventColor":"blue",
+                "display":'auto',
+                "className": "fwd",
+                "extendedProps": {
+                    "machines": output[i]["Maschine"]
                 }
-                var temp_event = {
-                    "resourceId":output[i]["MaschNr"],
-                    "title":output[i]["Job_ID"],
-                    "start":output[i]["Start"],
-                    "end":output[i]["Ende"],
-                    "eventColor":"blue",
-                    "display":'auto',
-                    "className": "fwd",
-                    "extendedProps": {
-                        "machines": output[i]["MaschNr"]
-                    }
-                };
-
-                events_var.push(temp_event);
-            }
-
-            var resources_var: { id: string; title: string }[] = [];
-            for (var i = 0; i < output.length; ++i) {
-                var temp_res = {
-                    "id":output[i]["MaschNr"],
-                    "title":output[i]["MaschNr"]
-                };
-                resources_var.push(temp_res);
-            }
-            /*output = [{
-               "MaschNr": "SL 2",
-                "title": "12403",
-                "start": new Date("2016-02-26T11:54:52Z"),
-                "end": new Date("2022-09-13T14:10:06Z")
-                    }]*/
-            var machinecount = resources_var.length
-            console.log(machinecount)
-            
-            this.calendarOptions["events"] = events_var
-            this.calendarOptions["resources"] = resources_var
-            console.log(this.calendarOptions["events"])
+            };
+            events_var.push(temp_event);
         }
+
+        var resources_var: { id: string; title: string }[] = [];
+        
+        for (var i = 0; i < output.length; ++i) {
+            var temp_res = {
+                "id":output[i]["Maschine"],
+                "title":output[i]["Maschine"]
+            };
+            resources_var.push(temp_res);
+        }
+        /*output = [{
+            "Maschine": "SL 2",
+            "title": "12403",
+            "start": new Date("2016-02-26T11:54:52Z"),
+            "end": new Date("2022-09-13T14:10:06Z")
+                }]*/
+        var machinecount = resources_var.length
+        console.log(machinecount)
+        
+        this.calendarOptions["events"] = events_var
+        this.calendarOptions["resources"] = resources_var
+        console.log(this.calendarOptions["events"])
+    }
 
 })
 
@@ -199,5 +281,29 @@ export default defineComponent({
 .fwd{
     height:20px;
     vertical-align: center;
+}
+.slot-label.operating-hours {
+  background-color: #FFFFFF;
+  color:blue;
+}
+.slot-label.weekend-non-operating-hours, .slot-label.holiday-non-operating-hours {
+  background-color: #F1F1F1;
+  color: #000000;
+}
+.date-label {
+  font-weight: bold;
+  text-align: center;
+}
+.fc-direction-ltr .fc-toolbar > * > * {
+  background-color: #F1F1F1;
+  color: #000000;
+}
+.fc-direction-ltr .fc-toolbar > * > *:hover {
+  background-color: #F1F1F1;
+  color: blue;
+}
+.fc .fc-toolbar-title, .fc .fc-toolbar-title:hover {
+  color:blue;
+  background-color: #FFFFFF;
 }
 </style>
