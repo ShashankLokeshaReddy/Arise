@@ -145,6 +145,8 @@ export default defineComponent({
 
                     const jobs_data = {
                         AKNR: info.event.title,
+                        TeilNr: info.event.extendedProps.TeilNr,
+                        SchrittNr: info.event.extendedProps.SchrittNr,
                         Start: startISOString,
                         Ende: endISOString,
                         Maschine: selectedMachine
@@ -154,8 +156,6 @@ export default defineComponent({
                     for (let key in jobs_data) {
                         formData.append(key, jobs_data[key]);
                     }
-                    console.log("jobs_data",jobs_data)
-                    console.log("formData",formData)
                     axios.post('http://localhost:8001/api/jobs/setInd/', formData)
                     .then(response => {
                         console.log(response.data);
@@ -176,7 +176,6 @@ export default defineComponent({
             var selectedMachine = resources[0]["title"];
             var machines = info.event.extendedProps.machines;
             var allowedMachines = machines.split(',');
-
             // Check whether the selected machine is allowed
             if (allowedMachines.includes(selectedMachine)) {
                 const start_s = new Date(info.event.start);
@@ -185,6 +184,8 @@ export default defineComponent({
                 const endISOString = end_s.toISOString().substring(0, 19) + "Z";
                 const jobs_data = {
                     AKNR: info.event.title,
+                    TeilNr: info.event.extendedProps.TeilNr,
+                    SchrittNr: info.event.extendedProps.SchrittNr,
                     Start: startISOString,
                     Ende: endISOString,
                     Maschine: selectedMachine
@@ -194,7 +195,6 @@ export default defineComponent({
                 for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
                 }
-    
                 axios.post('http://localhost:8001/api/jobs/setInd/', formData)
                 .then(response => {
                     console.log(response.data);
@@ -240,7 +240,9 @@ export default defineComponent({
                 "display":'auto',
                 "className": "fwd",
                 "extendedProps": {
-                    "machines": output[i]["Maschine"]
+                    "machines": output[i]["Maschine"],
+                    "TeilNr": output[i]["TeilNr"],
+                    "SchrittNr": output[i]["SchrittNr"]
                 }
             };
             events_var.push(temp_event);

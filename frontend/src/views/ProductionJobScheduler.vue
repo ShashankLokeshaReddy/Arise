@@ -237,7 +237,7 @@ export default defineComponent({
                 const end_s = new Date(info.event.end);
                 const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString};
+                const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
                 const formData = new FormData();
                 for (let key in jobs_data) {
                 formData.append(key, jobs_data[key]);
@@ -319,7 +319,7 @@ export default defineComponent({
                 const end_s = new Date(info.event.end);
                 const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString};
+                const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
                 const formData = new FormData();
                 for (let key in jobs_data) {
                 formData.append(key, jobs_data[key]);
@@ -374,7 +374,9 @@ export default defineComponent({
                     "display":'auto',
                     "className": "fwd",
                     "extendedProps": {
-                        "machines": output[i]["Maschine"]
+                        "machines": output[i]["Maschine"],
+                        "TeilNr": output[i]["TeilNr"],
+                        "SchrittNr": output[i]["SchrittNr"]
                     }
                 };
 

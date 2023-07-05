@@ -85,27 +85,36 @@ class JobsViewSet(ModelViewSet):
     @action(detail=False, methods=['get'])
     def getSchedule(self, request):
         # Get schedule data from the database
-        schedule = Job.objects.all()
-        serializer = JobsSerializer(schedule, many=True)
-        json_obj = {'Table':serializer.data}
+        aknr = request.query_params.get('AKNR')
+        teilnr = request.query_params.get('TeilNr')
+        schrittnr = request.query_params.get('SchrittNr')
+
+        if aknr is not None and teilnr is not None and schrittnr is not None:
+            jobs = Job.objects.filter(AKNR=aknr, TeilNr=teilnr, SchrittNr=schrittnr)
+        else:
+            jobs = Job.objects.all()
+
+        serializer = JobsSerializer(jobs, many=True)
+        json_obj = {'Table': serializer.data}
         return JsonResponse(json_obj, safe=False, status=status.HTTP_200_OK)
 
     # updates a batch of jobs
-    @action(detail=False, methods=['post'])
-    def setSchedule(self, request):
-        jobs_data = request.data["jobs_data"] # assuming the request payload contains a list of jobs
-        for job_data in jobs_data:
-            try:
-                job_instance = Job.objects.get(AKNR=job_data['AKNR'])
-                job_data['Start'] = datetime.strptime(job_data['Start'], date_format)
-                job_data['Ende'] = datetime.strptime(job_data['Ende'], date_format)
-                serializer = self.get_serializer(job_instance, data=job_data, partial=True)
-                serializer.is_valid(raise_exception=True)
-                self.perform_update(serializer)
-            except:
-                # handle exception here
-                pass
-        return Response(status=status.HTTP_200_OK)
+    # @action(detail=False, methods=['post'])
+    # def setSchedule(self, request):
+    #     jobs_data = request.data["jobs_data"] # assuming the request payload contains a list of jobs
+    #     for job_data in jobs_data:
+    #         try:
+    #             job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'])
+    #             print("job_instance",job_instance)
+    #             job_data['Start'] = datetime.strptime(job_data['Start'], date_format)
+    #             job_data['Ende'] = datetime.strptime(job_data['Ende'], date_format)
+    #             serializer = self.get_serializer(job_instance, data=job_data, partial=True)
+    #             serializer.is_valid(raise_exception=True)
+    #             self.perform_update(serializer)
+    #         except:
+    #             # handle exception here
+    #             pass
+    #     return Response(status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def uploadCSV(self, request):
@@ -119,13 +128,13 @@ class JobsViewSet(ModelViewSet):
 
         for job_data in jobs_data:
             job_instance = Job()
-            job_instance.FEFCO_Teil = job_data.get('FEFCO_Teil')
+            job_instance.Fefco_Teil = job_data.get('Fefco_Teil')
             job_instance.ArtNr_Teil = job_data.get('ArtNr_Teil')
-            job_instance.ID_DRUCK = job_data.get('ID_DRUCK')
+            job_instance.ID_Druck = job_data.get('ID_Druck')
             if str(job_data.get('Druckflaeche')) != 'NULL' and str(job_data.get('Druckflaeche')) != '':
                 job_instance.Druckflaeche = job_data.get('Druckflaeche')
-            job_instance.BOGEN_LAENGE_BRUTTO = job_data.get('BOGEN_LAENGE_BRUTTO')
-            job_instance.BOGEN_BREITE_BRUTTO = job_data.get('BOGEN_BREITE_BRUTTO')
+            job_instance.Bogen_Laenge_Brutto = job_data.get('Bogen_Laenge_Brutto')
+            job_instance.Bogen_Breite_Brutto = job_data.get('Bogen_Breite_Brutto')
             job_instance.Maschine = job_data.get('Maschine')
             job_instance.Start = parse_datetime(job_data.get('Start')) if job_data.get('Start') else None
             job_instance.Ende = parse_datetime(job_data.get('Ende')) if job_data.get('Ende') else None
@@ -209,7 +218,7 @@ class JobsViewSet(ModelViewSet):
     def setInd(self, request):
         job_data = request.data.copy()
         print("job_data",job_data)
-        job_instance = Job.objects.get(AKNR=job_data['AKNR'])
+        job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'])
         print("job_instance",job_instance)
         if 'Start' in job_data and 'Ende' in job_data:
             job_data['Start'] = job_data['Start']

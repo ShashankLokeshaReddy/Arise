@@ -173,11 +173,18 @@ export default defineComponent({
                 let calendar: any = this.$refs.calendar.getApi();
                 let currentView = calendar.view;
                 calendar.changeView(currentView.type);
+
                 const start_s = new Date(info.event.start);
-                const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                const startISOString = start_s.toISOString();
+                start_s.setDate(start_s.getDate() - 2);
+                const Lieferdatum_Rohmaterial = start_s.toISOString().substring(0, 19) + "Z";
+
                 const end_s = new Date(info.event.end);
-                const endISOString = end_s.toISOString().substring(0, 19) + "Z";
-                const jobs_data = {AKNR: info.event.title, Lieferdatum_Rohmaterial: startISOString, LTermin: endISOString}];
+                const endISOString = end_s.toISOString();
+                end_s.setDate(end_s.getDate() + 2);
+                const LTermin = end_s.toISOString().substring(0, 19) + "Z";
+
+                const jobs_data = {AKNR: info.event.title, Lieferdatum_Rohmaterial: Lieferdatum_Rohmaterial, LTermin: LTermin, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
 
                 const formData = new FormData();
                 for (let key in jobs_data) {
@@ -197,11 +204,18 @@ export default defineComponent({
                 let calendar: any = this.$refs.calendar.getApi();
                 let currentView = calendar.view;
                 calendar.changeView(currentView.type);
+
                 const start_s = new Date(info.event.start);
-                const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                const startISOString = start_s.toISOString();
+                start_s.setDate(start_s.getDate() - 2);
+                const Lieferdatum_Rohmaterial = start_s.toISOString().substring(0, 19) + "Z";
+
                 const end_s = new Date(info.event.end);
-                const endISOString = end_s.toISOString().substring(0, 19) + "Z";
-                const jobs_data = {AKNR: info.event.title, Lieferdatum_Rohmaterial: startISOString, LTermin: endISOString};
+                const endISOString = end_s.toISOString();
+                end_s.setDate(end_s.getDate() + 2);
+                const LTermin = end_s.toISOString().substring(0, 19) + "Z";
+
+                const jobs_data = {AKNR: info.event.title, Lieferdatum_Rohmaterial: Lieferdatum_Rohmaterial, LTermin: LTermin, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
 
                 const formData = new FormData();
                 for (let key in jobs_data) {
@@ -245,7 +259,11 @@ export default defineComponent({
                     "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (2 * 24 * 60 * 60 * 1000)),
                     "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                     "eventColor":"orange",
-                    "className": "bck"
+                    "className": "bck",
+                    "extendedProps": {
+                        "TeilNr": output[i]["TeilNr"],
+                        "SchrittNr": output[i]["SchrittNr"]
+                    }
                 };
                 var temp_event = {
                     "resourceId":output[i]["AKNR"],

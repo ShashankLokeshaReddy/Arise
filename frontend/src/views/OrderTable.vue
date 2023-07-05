@@ -90,12 +90,12 @@ export default {
         button.addEventListener('click', () => {
           const rowData = params.node.data
           const jobs_data = {
-            FEFCO_Teil: rowData.FEFCO_Teil,
+            Fefco_Teil: rowData.Fefco_Teil,
             ArtNr_Teil: rowData.ArtNr_Teil,
-            ID_DRUCK: rowData.ID_DRUCK,
+            ID_Druck: rowData.ID_Druck,
             Druckflaeche: rowData.Druckflaeche,
-            BOGEN_LAENGE_BRUTTO: rowData.BOGEN_LAENGE_BRUTTO,
-            BOGEN_BREITE_BRUTTO: rowData.BOGEN_BREITE_BRUTTO,
+            Bogen_Laenge_Brutto: rowData.Bogen_Laenge_Brutto,
+            Bogen_Breite_Brutto: rowData.Bogen_Breite_Brutto,
             Maschine: rowData.Maschine,
             Ruestzeit_Ist: rowData.Ruestzeit_Ist,
             Ruestzeit_Soll: rowData.Ruestzeit_Soll,
@@ -142,12 +142,12 @@ export default {
 
       this.columnDefs = [
         { headerName: "AKNR", field: "AKNR", type: 'rightAligned', filter:true },
-        { headerName: "FEFCO_Teil", field: "FEFCO_Teil", type: 'rightAligned', filter:true },
+        { headerName: "Fefco_Teil", field: "Fefco_Teil", type: 'rightAligned', filter:true },
         { headerName: "ArtNr_Teil", field: "ArtNr_Teil", type: 'rightAligned', filter:true },
-        { headerName: "ID_DRUCK", field: "ID_DRUCK", type: 'rightAligned', filter:true },
+        { headerName: "ID_Druck", field: "ID_Druck", type: 'rightAligned', filter:true },
         { headerName: "Druckflaeche", field: "Druckflaeche", type: 'rightAligned', filter:true },
-        { headerName: "BOGEN_LAENGE_BRUTTO", field: "BOGEN_LAENGE_BRUTTO", type: 'rightAligned', filter:true },
-        { headerName: "BOGEN_BREITE_BRUTTO", field: "BOGEN_BREITE_BRUTTO", type: 'rightAligned', filter:true },
+        { headerName: "Bogen_Laenge_Brutto", field: "Bogen_Laenge_Brutto", type: 'rightAligned', filter:true },
+        { headerName: "Bogen_Breite_Brutto", field: "Bogen_Breite_Brutto", type: 'rightAligned', filter:true },
         { headerName: "Maschine", field: "Maschine", type: 'rightAligned', filter:true },
         { headerName: "Ruestzeit_Ist", field: "Ruestzeit_Ist", type: 'rightAligned', filter:true },
         { headerName: "Ruestzeit_Soll", field: "Ruestzeit_Soll", type: 'rightAligned', filter:true },

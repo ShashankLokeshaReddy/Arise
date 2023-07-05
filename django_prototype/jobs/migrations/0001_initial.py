@@ -12,12 +12,12 @@ class Migration(migrations.Migration):
             name='Job',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('FEFCO_Teil', models.CharField(max_length=1000, null=True)),
+                ('Fefco_Teil', models.CharField(max_length=1000, null=True)),
                 ('ArtNr_Teil', models.CharField(max_length=1000, null=True)),
-                ('ID_DRUCK', models.CharField(max_length=1000, null=True)),
+                ('ID_Druck', models.CharField(max_length=1000, null=True)),
                 ('Druckflaeche', models.DecimalField(max_digits=5, decimal_places=2, null=True, default=None)),
-                ('BOGEN_LAENGE_BRUTTO', models.CharField(max_length=1000, null=True)),
-                ('BOGEN_BREITE_BRUTTO', models.CharField(max_length=1000, null=True)),
+                ('Bogen_Laenge_Brutto', models.CharField(max_length=1000, null=True)),
+                ('Bogen_Breite_Brutto', models.CharField(max_length=1000, null=True)),
                 ('Maschine', models.CharField(max_length=1000, null=True)),
                 ('Ruestzeit_Ist', models.CharField(max_length=1000, null=True)),
                 ('Ruestzeit_Soll', models.CharField(max_length=1000, null=True)),
@@ -45,7 +45,8 @@ class Migration(migrations.Migration):
                 ('BE_Erledigt', models.CharField(max_length=1000, null=True)),
             ],
             options={
-                'ordering': ('AKNR',),
+                'ordering': ('AKNR', 'TeilNr', 'SchrittNr'),
+                'unique_together': {('AKNR', 'TeilNr', 'SchrittNr')},  # Add unique constraint
             },
         ),
     ]
