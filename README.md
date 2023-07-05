@@ -21,7 +21,7 @@ Step 3: Create super user with the cmd "python manage.py createsuperuser --usern
 
 Step 4: Upon successful creation of super user, navigate to this url "http://localhost:8001/admin" and login as an admin. 
 
-Step 5: Once done, the frontend app can be started successfully in 8080 port. The jobs  can be imported into the database either through the admin console (http://localhost:8001/admin/jobs/job/import/) or directly through the front end app.
+Step 5: Once done, the frontend app can be started successfully in 8081 port. The jobs  can be imported into the database either through the admin console (http://localhost:8001/admin/jobs/job/import/) or directly through the front end app.
 
 ## Code Metrics
 
