@@ -25,4 +25,8 @@ Next steps:
 					  Ordered dict -> dataframe -> input to PL optimizer
 
 		What about other heuristics? SJF and deadline first?
+		
+		Database part - yet to explore
+		
+		
 	

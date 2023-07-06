@@ -100,7 +100,7 @@ export default defineComponent({
                             return;
                         }
                         axios
-                            .post('http://' + new URL(window.location.href).hostname + ':8001/api/jobs/savejobstoCSV/')
+                            .post('http://' + location.hostname + ':8001/api/jobs/savejobstoCSV/')
                             .then((response) => {
                             console.log(response.data);
                             this.isLoading = false;
@@ -156,7 +156,7 @@ export default defineComponent({
                     for (let key in jobs_data) {
                         formData.append(key, jobs_data[key]);
                     }
-                    axios.post('http://' + new URL(window.location.href).hostname + ':8001/api/jobs/setInd/', formData)
+                    axios.post('http://' + location.hostname + ':8001/api/jobs/setInd/', formData)
                     .then(response => {
                         console.log(response.data);
                     })
@@ -195,7 +195,7 @@ export default defineComponent({
                 for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
                 }
-                axios.post('http://' + new URL(window.location.href).hostname + ':8001/api/jobs/setInd/', formData)
+                axios.post('http://' + location.hostname + ':8001/api/jobs/setInd/', formData)
                 .then(response => {
                     console.log(response.data);
                 })
@@ -220,7 +220,7 @@ export default defineComponent({
         }
     },
     async created(){
-        var response = await fetch('http://' + new URL(window.location.href).hostname + ':8001/api/jobs/getSchedule')
+        var response = await fetch('http://' + location.hostname + ':8001/api/jobs/getSchedule')
         var output_resp = await response.json()
         var status = output_resp["Status"]
         var output : { Maschine: string; machines: string; AKNR: string; TeilNr: string; SchrittNr: string; item: string; Start: Date, Ende: Date }[] = [];
