@@ -1,8 +1,8 @@
 07/07/2023
 Taks done:
 	3 field lookup (AKNR, TeilNr, SchrittNr) instead of AKNR
-	localhost hardcoding removed for all APIs
 	New IP address 192.168.1.8 included in settings.py
+	localhost hardcoding removed for all APIs, but somehow APIs still points to different IP instead of 192.168.1.8
 	VPN and Server setup done
 	
 	steps followed in Server:
@@ -24,9 +24,11 @@ Next steps:
 					  serializer.data : [OrderedDict([('Fefco_Teil', '0411 man'), ('ArtNr_Teil', '10293'), ('ID_Druck', '1'), ('Druckflaeche', '0.05'), ('Bogen_Laenge_Brutto', '2075'), ('Bogen_Breite_Brutto', '1568'), ('Maschine', 'SL-7'), ('Ruestzeit_Ist', '0'), ('Ruestzeit_Soll', '25'), ('Laufzeit_Ist', '0'), ('Laufzeit_Soll', '10'), ('Zeit_Ist', '0'), ('Zeit_Soll', '35'), ('Werkzeug_Nutzen', 'NULL'), ('Bestell_Nutzen', '1'), ('Menge_Soll', '3000'), ('Menge_Ist', '1'), ('Bemerkung', 'NULL'), ('LTermin', '2014-01-07T00:00:00Z'), ('KndNr', '11910'), ('Suchname', 'HUGA'), ('AKNR', '3223'), ('TeilNr', '1'), ('SchrittNr', '1'), ('Start', None), ('Ende', None), ('Summe_Minuten', None), ('ID_Maschstatus', None), ('Maschstatus', None), ('Lieferdatum_Rohmaterial', '2014-01-03T00:00:00Z'), ('BE_Erledigt', '1')]), OrderedDict([('Fefco_Teil', '0216 G man'), ('ArtNr_Teil', '10176'), ('ID_Druck', '1'), ('Druckflaeche', '0.01'), ('Bogen_Laenge_Brutto', '1998'), ('Bogen_Breite_Brutto', '767'), ('Maschine', 'SL-2'), ('Ruestzeit_Ist', '1'), ('Ruestzeit_Soll', '30'), ('Laufzeit_Ist', '2'), ('Laufzeit_Soll', '42'), ('Zeit_Ist', '3'), ('Zeit_Soll', '72'), ('Werkzeug_Nutzen', 'NULL'), ('Bestell_Nutzen', '1'), ('Menge_Soll', '2600'), ('Menge_Ist', '2650'), ('Bemerkung', 'Werkzeug Nr. ??????  (Am 20.09.2013 bei Bergfeld bestellt)'), ('LTermin', '2014-01-07T00:00:00Z'), ('KndNr', '12610'), ('Suchname', 'MOELLERFLEX'), ('AKNR', '3225'), ('TeilNr', '1'), ('SchrittNr', '1'), ('Start', '2014-01-06T08:33:39Z'), ('Ende', '2014-01-06T08:35:31Z'), ('Summe_Minuten', None), ('ID_Maschstatus', None), ('Maschstatus', None), ('Lieferdatum_Rohmaterial', '2014-01-03T00:00:00Z'), ('BE_Erledigt', '1')])]
 					  Ordered dict -> dataframe -> input to PL optimizer
 
-		What about other heuristics? SJF and deadline first?
+		Low priority: What about other heuristics? SJF and deadline first?
 		
-		Database part - yet to explore
+	Database part - yet to explore
+		can we connect to Server DB from my local SSMS? If yes -> localhost app -*- Server DB -> Deploy
+			
 		
 		
 	
