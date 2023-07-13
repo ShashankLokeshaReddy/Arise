@@ -45,8 +45,8 @@ class Migration(migrations.Migration):
                 ('BE_Erledigt', models.CharField(max_length=1000, null=True)),
             ],
             options={
-                'ordering': ('AKNR', 'TeilNr', 'SchrittNr'),
-                'unique_together': {('AKNR', 'TeilNr', 'SchrittNr')},  # Add unique constraint
+                'ordering': ('AKNR', 'TeilNr', 'SchrittNr', 'Fefco_Teil', 'ArtNr_Teil'),
+                'unique_together': {('AKNR', 'TeilNr', 'SchrittNr', 'Fefco_Teil', 'ArtNr_Teil')},  # Add unique constraint
             },
         ),
     ]

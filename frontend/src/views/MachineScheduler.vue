@@ -85,6 +85,7 @@ export default defineComponent({
             },
             locale: "ger",
             initialView: 'resourceTimelineDay',
+            datesSet: this.handleDatesSet,
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
                 left: 'prev next today myCustomButton',
@@ -126,88 +127,97 @@ export default defineComponent({
             resources: [],
             events: [] as { resourceId : string; title: string; start: Date; end: Date; eventTextColor : string;}[],
             eventDidMount: (info) => {
-                info.el.style.background = `blue`;
+                if(info.event.classNames[0] === "fwd"){
+                    info.el.style.background = `blue`;
+                }
+                if(info.event.classNames[0] === "fwd_db"){
+                    info.el.style.background = `green`;
+                }
                 info.el.style.color = "white";
             },
             eventResize: (info) => {
-                // Get the selected machine
-                var resources = info.event.getResources();
-                var selectedMachine = resources[0]["title"];
-                var machines = info.event.extendedProps.machines;
-                var allowedMachines = machines.split(',');
-                
-                // Check whether the selected machine is allowed
-                if (allowedMachines.includes(selectedMachine)) {
-                    const start_s = new Date(info.event.start);
-                    const startISOString = start_s.toISOString().substring(0, 19) + "Z";
-                    const end_s = new Date(info.event.end);
-                    const endISOString = end_s.toISOString().substring(0, 19) + "Z";
+                if(info.event.classNames[0] !== "fwd_db"){
+                    // Get the selected machine
+                    var resources = info.event.getResources();
+                    var selectedMachine = resources[0]["title"];
+                    var machines = info.event.extendedProps.machines;
+                    var allowedMachines = machines.split(',');
+                    
+                    // Check whether the selected machine is allowed
+                    if (allowedMachines.includes(selectedMachine)) {
+                        const start_s = new Date(info.event.start);
+                        const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                        const end_s = new Date(info.event.end);
+                        const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {
-                        AKNR: info.event.title,
-                        TeilNr: info.event.extendedProps.TeilNr,
-                        SchrittNr: info.event.extendedProps.SchrittNr,
-                        Start: startISOString,
-                        Ende: endISOString,
-                        Maschine: selectedMachine
-                    };
+                        const jobs_data = {
+                            AKNR: info.event.title,
+                            TeilNr: info.event.extendedProps.TeilNr,
+                            SchrittNr: info.event.extendedProps.SchrittNr,
+                            Start: startISOString,
+                            Ende: endISOString,
+                            Maschine: selectedMachine
+                        };
 
-                    const formData = new FormData();
-                    for (let key in jobs_data) {
-                        formData.append(key, jobs_data[key]);
+                        const formData = new FormData();
+                        for (let key in jobs_data) {
+                            formData.append(key, jobs_data[key]);
+                        }
+                        axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
+                        .then(response => {
+                            console.log(response.data);
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        });
+                    } 
+                    else {
+                        // If the selected machine is not allowed, revert the event to its original position
+                        info.revert();
+                        alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                     }
-                    axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
-                    .then(response => {
-                        console.log(response.data);
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
-                } 
-                else {
-                    // If the selected machine is not allowed, revert the event to its original position
-                    info.revert();
-                    alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                 }
             },
             eventDrop: (info) => {
-            // Get the selected machine
-            var resources = info.event.getResources();
-            var selectedMachine = resources[0]["title"];
-            var machines = info.event.extendedProps.machines;
-            var allowedMachines = machines.split(',');
-            // Check whether the selected machine is allowed
-            if (allowedMachines.includes(selectedMachine)) {
-                const start_s = new Date(info.event.start);
-                const startISOString = start_s.toISOString().substring(0, 19) + "Z";
-                const end_s = new Date(info.event.end);
-                const endISOString = end_s.toISOString().substring(0, 19) + "Z";
-                const jobs_data = {
-                    AKNR: info.event.title,
-                    TeilNr: info.event.extendedProps.TeilNr,
-                    SchrittNr: info.event.extendedProps.SchrittNr,
-                    Start: startISOString,
-                    Ende: endISOString,
-                    Maschine: selectedMachine
-                };
+                if(info.event.classNames[0] !== "fwd_db"){
+                    // Get the selected machine
+                    var resources = info.event.getResources();
+                    var selectedMachine = resources[0]["title"];
+                    var machines = info.event.extendedProps.machines;
+                    var allowedMachines = machines.split(',');
+                    // Check whether the selected machine is allowed
+                    if (allowedMachines.includes(selectedMachine)) {
+                        const start_s = new Date(info.event.start);
+                        const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                        const end_s = new Date(info.event.end);
+                        const endISOString = end_s.toISOString().substring(0, 19) + "Z";
+                        const jobs_data = {
+                            AKNR: info.event.title,
+                            TeilNr: info.event.extendedProps.TeilNr,
+                            SchrittNr: info.event.extendedProps.SchrittNr,
+                            Start: startISOString,
+                            Ende: endISOString,
+                            Maschine: selectedMachine
+                        };
 
-                const formData = new FormData();
-                for (let key in jobs_data) {
-                    formData.append(key, jobs_data[key]);
+                        const formData = new FormData();
+                        for (let key in jobs_data) {
+                            formData.append(key, jobs_data[key]);
+                        }
+                        axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
+                        .then(response => {
+                            console.log(response.data);
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        });
+                    } 
+                    else {
+                        // If the selected machine is not allowed, revert the event to its original position
+                        info.revert();
+                        alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
+                    }
                 }
-                axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
-                .then(response => {
-                    console.log(response.data);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-            } 
-            else {
-                // If the selected machine is not allowed, revert the event to its original position
-                info.revert();
-                alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
-            }
             },
             mounted() {
                 this.$nextTick(() => {
@@ -280,7 +290,7 @@ export default defineComponent({
     height:10px;
     vertical-align: center;
 }
-.fwd{
+.fwd, .fwd_db{
     height:20px;
     vertical-align: center;
 }

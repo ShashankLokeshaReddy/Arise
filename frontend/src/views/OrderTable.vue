@@ -1,19 +1,28 @@
 <template>
   <v-container>
-    <v-row align="center">
-      <v-col align="center" class="mb-4">
-        <button class="bordered flex-grow-1 mr-2"  @click="runSJF">SJF</button>
-        <button class="bordered flex-grow-1 mr-2"  @click="runDeadlineFirst">Early Deadline</button>
+    <v-row align="center" class="mb-4">
+      <v-col align="center">
+        <button class="custom-button" @click="runSJF">SJF</button>
+        <button class="custom-button" @click="runDeadlineFirst">Early Deadline</button>
+        <button class="custom-button" @click="runPLOptimizer">Preference Optimizer</button>
+        <button class="custom-button" @click="stopProcess">PL stoppen</button>
       </v-col>
-      <v-col align="center" class="mb-4">
-        <button class="bordered flex-grow-1 mr-2"  @click="runPLOptimizer">Preference Optimizer</button>
-        <button class="bordered flex-grow-1 mr-2"  @click="stopProcess">PL stoppen</button>
-        <button class="bordered flex-grow-1 mr-2"  @click="saveJobs">Save Job Orders</button>
+      <v-col align="center">
+        <div class="date-input-container">
+          <label for="startDate" class="date-label">Start Date</label>
+          <input v-model="startDate" type="date" id="startDate" class="date-input">
+        </div>
+        <div class="date-input-container">
+          <label for="endDate" class="date-label">End Date</label>
+          <input v-model="endDate" type="date" id="endDate" class="date-input">
+        </div>
+        <button class="custom-button" @click="getUnSchedJobs(startDate, endDate)">Jobs abrufen</button>
+        <button class="custom-button" @click="saveJobs">Save Job Orders</button>
       </v-col>
-      <v-col align="center" class="mb-4">
-        <input type="file" ref="fileInput"  @change="handleFileUpload"/>
-        <button class="bordered"  @click="upload">Arbeitsaufträge hochladen</button>
-        <button class="bordered"  @click="deleteJobs">Arbeitsaufträge löschen</button>
+      <v-col align="center">
+        <input type="file" ref="fileInput" @change="handleFileUpload" class="date-input">
+        <button class="custom-button" @click="upload">Arbeitsaufträge hochladen</button>
+        <button class="custom-button" @click="deleteJobs">Arbeitsaufträge löschen</button>
       </v-col>
     </v-row>
   </v-container>
@@ -22,7 +31,7 @@
     <v-progress-circular
       :size="70"
       :width="7"
-      color=blue
+      color="blue"
       indeterminate
     ></v-progress-circular>
   </v-container>
@@ -33,7 +42,7 @@
       class="ag-theme-alpine"
       :columnDefs="columnDefs"
       :rowData="rowData"
-      display = "flex"
+      display="flex"
       rowSelection="multiple"
       alignItems="start"
     ></ag-grid-vue>
@@ -64,6 +73,32 @@ export default {
   },
 
   methods: {
+    getUnSchedJobs(startDate, endDate) {
+      const confirmed = window.confirm("Möchten Sie alle Jobs in einer DB speichern?");
+      if (!confirmed) {
+        return;
+      }
+      this.isLoading = true; // show loading icon
+        const info_json = {
+          info_start: startDate,
+          info_end: endDate
+        };
+        const formData = new FormData();
+        for (let key in info_json) {
+            formData.append(key, info_json[key]);
+        }
+      axios
+        .post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteDataUnscheduled/', formData)
+        .then((response) => {
+          console.log(response.data);
+          this.isLoading = false;
+          window.alert(response.data.message);
+          this.fillTable();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
     saveJobs() {
       const confirmed = window.confirm("Möchten Sie alle Jobs in einer CSV-Datei speichern?");
       if (!confirmed) {
@@ -286,50 +321,45 @@ export default {
 </script>
 
 <style>
-  button {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 6px 12px; /* smaller padding */
-    font-size: 12px; /* smaller font size */
-    font-weight: 500;
-    text-transform: uppercase;
-    color: #000000;
-    background-color: #F1F1F1;
-  }
+.custom-button {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #000000;
+  background-color: #f1f1f1;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
 
-  button:hover {
-    border-color: #999;
-    color: blue;
-    background-color: #F1F1F1;
-  }
+.custom-button:hover {
+  border-color: #999;
+  color: blue;
+  background-color: #f1f1f1;
+}
 
-  button:active,
-  button:focus {
-    outline: none;
-    box-shadow: none;
-  }
+.custom-button:active,
+.custom-button:focus {
+  outline: none;
+  box-shadow: none;
+}
 
-  label {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 6px 12px; /* smaller padding */
-    font-size: 12px; /* smaller font size */
-    font-weight: 500;
-    text-transform: uppercase;
-    color: #333;
-    background-color: #fff;
-  }
+.date-input {
+  margin-right: 0.5rem;
+  padding: 0.25rem;
+  margin-bottom: 8px;
+}
 
-  label:hover {
-    border-color: #999;
-    color: #666;
-    background-color: #f5f5f5;
-  }
-
-  label:active,
-  label:focus {
-    outline: none;
-    box-shadow: none;
-  }
+.date-label {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #333;
+  background-color: transparent;
+  margin-right: 4px;
+  margin-bottom: 8px;
+}
 </style>
 

@@ -256,7 +256,7 @@ export default defineComponent({
                 var bck_event = {
                     "resourceId":output[i]["AKNR"],
                     "title":output[i]["AKNR"],
-                    "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (2 * 24 * 60 * 60 * 1000)),
+                    "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
                     "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                     "eventColor":"orange",
                     "className": "bck",
