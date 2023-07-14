@@ -72,7 +72,7 @@ def get_df_mit_MachStatus_parameters(startDate, endDate):
         LEFT OUTER JOIN schulte_copy.dbo.tbl_BESTELLUNG_KOPF t7 ON t3.BESTNR = t7.BENR
         LEFT OUTER JOIN schulte_copy.dbo.tbl_MASCHINENPARAMETER t8 ON t1.ID_MASCHNR = t8.MASCHNR
         WHERE t1.SCHRITTNR <> 0 AND t1.ID_MASCHNR <> 1
-        AND t5.Start >= '{startDate}' AND t5.Ende <= '{endDate}'
+        AND t7.Lieferdatum >= '{startDate}' AND t2.LTermin <= '{endDate}'
         AND t6.Maschstatus='Produktion'
         '''
 

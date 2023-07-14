@@ -2,10 +2,14 @@
   <v-container>
     <v-row align="center" class="mb-4">
       <v-col align="center">
-        <button class="custom-button" @click="runSJF">SJF</button>
-        <button class="custom-button" @click="runDeadlineFirst">Early Deadline</button>
-        <button class="custom-button" @click="runPLOptimizer">Preference Optimizer</button>
-        <button class="custom-button" @click="stopProcess">PL stoppen</button>
+      <div class="date-input-container">
+          <button class="custom-button" @click="runSJF">SJF</button>
+          <button class="custom-button" @click="runDeadlineFirst">Early Deadline</button>
+        </div>
+        <div class="date-input-container">
+          <button class="custom-button" @click="runPLOptimizer">Preference Optimizer</button>
+          <button class="custom-button" @click="stopProcess">PL stoppen</button>
+        </div>
       </v-col>
       <v-col align="center">
         <div class="date-input-container">

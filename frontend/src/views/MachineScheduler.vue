@@ -1,8 +1,19 @@
 <template>
-    <div>
-        <FullCalendar ref="machinecalendar" :options="calendarOptions">
-        </FullCalendar>
+  <div>
+    <!-- FullCalendar component with loading overlay -->
+    <div class="calendar-container">
+      <div v-if="isLoading" class="loading-overlay">
+        <v-progress-circular
+          :size="70"
+          :width="7"
+          color="blue"
+          indeterminate
+        ></v-progress-circular>
+      </div>
+
+      <FullCalendar ref="machinecalendar" :options="calendarOptions"></FullCalendar>
     </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -24,6 +35,7 @@ export default defineComponent({
     components: {FullCalendar},
     data()  {
         return {
+            isLoading: false,
             calendarApi: null,
             calendarOptions: {
             plugins: [ 
@@ -88,7 +100,7 @@ export default defineComponent({
             datesSet: this.handleDatesSet,
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
-                left: 'prev next today myCustomButton',
+                left: 'prev today next myCustomButton',
                 center: 'title',
                 right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay',
             },
@@ -177,6 +189,11 @@ export default defineComponent({
                         alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                     }
                 }
+                else {
+                    // If the selected machine is not allowed, revert the event to its original position
+                    info.revert();
+                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                }
             },
             eventDrop: (info) => {
                 if(info.event.classNames[0] !== "fwd_db"){
@@ -218,16 +235,99 @@ export default defineComponent({
                         alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                     }
                 }
+                else {
+                    // If the selected machine is not allowed, revert the event to its original position
+                    info.revert();
+                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                }
             },
-            mounted() {
-                this.$nextTick(() => {
-                    let calendar = this.$refs.machinecalendar.getApi();
-                    let currentView = calendar.view;
-                    console.log(currentView.type);
-                })
-            }
+
             },
         }
+    },
+    methods: {
+        handleButtonClick() {
+        // Method to be invoked when a button is clicked
+        this.isLoading = true;
+        const calendarApi = this.$refs.machinecalendar.getApi();
+        const { activeStart, activeEnd} = calendarApi.view;
+        console.log('Button clicked:', calendarApi.view, activeStart, activeEnd);
+        const info_json = {
+            info_start: activeStart,
+            info_end: activeEnd
+        };
+        const formData = new FormData();
+        for (let key in info_json) {
+            formData.append(key, info_json[key]);
+        }
+        axios.post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteData/', formData)
+            .then(response => {
+            var output_resp = response.data;
+            var output = output_resp["Schulte_data"];
+
+            var events_var_db = [];
+            for (var i = 0; i < output.length; ++i) {
+                if (output[i]["Ende"] === null) {
+                output[i]["Ende"] = output[i]["end"];
+                }
+                var temp_event = {
+                "resourceId": output[i]["Maschine"],
+                "title": output[i]["AKNR"],
+                "start": output[i]["Start"],
+                "end": output[i]["Ende"],
+                "eventColor": "green",
+                "display": 'auto',
+                "className": "fwd_db",
+                "extendedProps": {
+                    "machines": output[i]["Maschine"],
+                    "TeilNr": output[i]["TeilNr"],
+                    "SchrittNr": output[i]["SchrittNr"]
+                }
+                };
+                events_var_db.push(temp_event);
+            }
+
+            var resources_var_db = [];
+
+            for (var i = 0; i < output.length; ++i) {
+                var temp_res = {
+                "id": output[i]["Maschine"],
+                "title": output[i]["Maschine"]
+                };
+                resources_var_db.push(temp_res);
+            }
+
+            // Merge events_var_db with existing events
+            this.calendarOptions.events = this.calendarOptions.events.filter(event => {
+                return !event.className.includes("fwd_db");
+            }).concat(events_var_db);
+
+            // Merge resources_var_db with existing resources
+            resources_var_db.forEach(resource => {
+                const existingResource = this.calendarOptions.resources.find(r => r.id === resource.id);
+                if (!existingResource) {
+                this.calendarOptions.resources.push(resource);
+                }
+            });
+            this.isLoading = false;
+            // Log the number of events
+            console.log("No. of events", this.calendarOptions.events.length);
+            })
+            .catch(error => {
+            console.log(error);
+            this.isLoading = false;
+            });
+        },
+    },
+    mounted() {
+        // Register click event listeners for the buttons
+        const buttons = document.querySelectorAll('.fc-button');
+        buttons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            const buttonName = event.target.getAttribute('data-navlink');
+            this.handleButtonClick();
+        });
+        });
     },
     async created(){
         var response = await fetch('http://' + window.location.hostname + ':8001/api/jobs/getSchedule')
@@ -317,5 +417,19 @@ export default defineComponent({
 .fc .fc-toolbar-title, .fc .fc-toolbar-title:hover {
   color:blue;
   background-color: #FFFFFF;
+}
+.calendar-container {
+  position: relative;
+}
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
