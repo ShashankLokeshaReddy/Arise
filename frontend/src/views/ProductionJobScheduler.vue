@@ -1,8 +1,19 @@
 <template>
-    <div>
-        <FullCalendar ref="prodcalendar" :options="calendarOptions">
-        </FullCalendar>
+  <div>
+    <!-- FullCalendar component with loading overlay -->
+    <div class="calendar-container">
+      <div v-if="isLoading" class="loading-overlay">
+        <v-progress-circular
+          :size="70"
+          :width="7"
+          color="blue"
+          indeterminate
+        ></v-progress-circular>
+      </div>
+
+      <FullCalendar ref="prodcalendar" :options="calendarOptions"></FullCalendar>
     </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -24,6 +35,7 @@ export default defineComponent({
     components: {FullCalendar},
     data()  {
         return {
+            isLoading: false,
             calendarApi: null,
             calendarOptions: {
                 plugins: [ 
@@ -125,225 +137,373 @@ export default defineComponent({
             resources: [],
             events: [] as { resourceId : string; title: string; start: Date; end: Date; eventTextColor : string;}[],
             eventDidMount: (info) => {
-                let calendar: any = this.$refs.prodcalendar.getApi();
-                let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
-                let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
-                let offset_start = view_start.getTimezoneOffset();
-                let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
-                let offset_end = view_end.getTimezoneOffset();
-                let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
-                var resources = info.event.getResources();
-                console.log("info.event",info.event)
-                var all_events = resources[0].getEvents()
-                var bck_event
-                for (let i = 0; i < all_events.length; i++) {
-                    if (all_events[i].classNames[0] === "bck"){ //info.event.title
-                        bck_event = all_events[i]
+                if(info.event.classNames[0] !== "fwd_db" && info.event.classNames[0] !== "bck_db"){
+                    let calendar: any = this.$refs.prodcalendar.getApi();
+                    let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
+                    let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
+                    let offset_start = view_start.getTimezoneOffset();
+                    let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
+                    let offset_end = view_end.getTimezoneOffset();
+                    let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
+                    var resources = info.event.getResources();
+                    console.log("info.event",info.event)
+                    var all_events = resources[0].getEvents()
+                    var bck_event
+                    for (let i = 0; i < all_events.length; i++) {
+                        if (all_events[i].classNames[0] === "bck"){ //info.event.title
+                            bck_event = all_events[i]
+                        }
                     }
-                }
-                if(info.event.classNames[0] === "fwd"){
-                    var override_start = info.event.start;
-                    var override_end = info.event.end;
-                    if(info.event.end > gmtTime_view_end){
-                        override_end = gmtTime_view_end;
+                    if(info.event.classNames[0] === "fwd"){
+                        var override_start = info.event.start;
+                        var override_end = info.event.end;
+                        if(info.event.end > gmtTime_view_end){
+                            override_end = gmtTime_view_end;
+                        }
+                        if(info.event.start < gmtTime_view_start){
+                            override_start = gmtTime_view_start;
+                        }
                     }
-                    if(info.event.start < gmtTime_view_start){
-                        override_start = gmtTime_view_start;
+                    console.log(view_start,view_end);
+                    console.log(info.event.title,info.event.start,info.event.end);
+                    console.log(bck_event.title,bck_event.start,bck_event.end);
+                    if((info.event.end > bck_event.end) && (info.event.classNames[0] === "fwd")){
+                        var numerator = bck_event.end - override_start;
+                        var denominator = override_end - override_start;
+                        var delta = numerator*100/denominator;
+                        info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
+                        info.el.style.color = "white";
                     }
-                }
-                console.log(view_start,view_end);
-                console.log(info.event.title,info.event.start,info.event.end);
-                console.log(bck_event.title,bck_event.start,bck_event.end);
-                if((info.event.end > bck_event.end) && (info.event.classNames[0] === "fwd")){
-                    var numerator = bck_event.end - override_start;
-                    var denominator = override_end - override_start;
-                    var delta = numerator*100/denominator;
-                    info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
-                    info.el.style.color = "white";
-                }
-                else if(info.event.classNames[0] === "bck"){
-                    info.el.style.background = `orange`;
+                    else if(info.event.classNames[0] === "bck"){
+                        info.el.style.background = `orange`;
+                    }
+                    else{
+                        info.el.style.background = `blue`;
+                        info.el.style.color = "white";
+                    }
                 }
                 else{
-                    info.el.style.background = `blue`;
-                    info.el.style.color = "white";
+                    let calendar: any = this.$refs.prodcalendar.getApi();
+                    let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
+                    let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
+                    let offset_start = view_start.getTimezoneOffset();
+                    let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
+                    let offset_end = view_end.getTimezoneOffset();
+                    let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
+                    var resources = info.event.getResources();
+                    console.log("info.event",info.event)
+                    var all_events = resources[0].getEvents()
+                    var bck_event
+                    for (let i = 0; i < all_events.length; i++) {
+                        if (all_events[i].classNames[0] === "bck_db"){ //info.event.title
+                            bck_event = all_events[i]
+                        }
+                    }
+                    if(info.event.classNames[0] === "fwd_db"){
+                        var override_start = info.event.start;
+                        var override_end = info.event.end;
+                        if(info.event.end > gmtTime_view_end){
+                            override_end = gmtTime_view_end;
+                        }
+                        if(info.event.start < gmtTime_view_start){
+                            override_start = gmtTime_view_start;
+                        }
+                    }
+                    console.log(view_start,view_end);
+                    console.log(info.event.title,info.event.start,info.event.end);
+                    console.log(bck_event.title,bck_event.start,bck_event.end);
+                    if((info.event.end > bck_event.end) && (info.event.classNames[0] === "fwd_db")){
+                        var numerator = bck_event.end - override_start;
+                        var denominator = override_end - override_start;
+                        var delta = numerator*100/denominator;
+                        info.el.style.background = `linear-gradient(90deg, green ${delta}%, red 0%)`;
+                        info.el.style.color = "white";
+                    }
+                    else if(info.event.classNames[0] === "bck_db"){
+                        info.el.style.background = `yellow`;
+                    }
+                    else{
+                        info.el.style.background = `green`;
+                        info.el.style.color = "white";
+                    }                   
                 }
             },
             eventResize: (info) => {
-                let calendar: any = this.$refs.prodcalendar.getApi();
-                let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
-                let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
-                let offset_start = view_start.getTimezoneOffset();
-                let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
-                let offset_end = view_end.getTimezoneOffset();
-                let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
+                if(info.event.classNames[0] !== "fwd_db" && info.event.classNames[0] !== "bck_db"){
+                    let calendar: any = this.$refs.prodcalendar.getApi();
+                    let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
+                    let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
+                    let offset_start = view_start.getTimezoneOffset();
+                    let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
+                    let offset_end = view_end.getTimezoneOffset();
+                    let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
 
-                var resources = info.event.getResources();
-                var all_events = resources[0].getEvents();
-                
-                // Get all events with the same title, but exclude the current event
-                const res = calendar.getResources();
-                const all_events_in_calandar = res.flatMap(resource => resource.getEvents())
-                const overlapping_events = all_events_in_calandar.filter(event => {
-                    return (event.title === info.event.title && event !== info.event);
-                });
+                    var resources = info.event.getResources();
+                    var all_events = resources[0].getEvents();
+                    
+                    // Get all events with the same title, but exclude the current event
+                    const res = calendar.getResources();
+                    const all_events_in_calandar = res.flatMap(resource => resource.getEvents())
+                    const overlapping_events = all_events_in_calandar.filter(event => {
+                        return (event.title === info.event.title && event !== info.event);
+                    });
 
-                // Check for overlapping events across different resources
-                const eventStart = info.event.start;
-                const eventEnd = info.event.end;
-                for (const overlappingEvent of overlapping_events) {
-                    const resourceIds = info.event.getResources().map(resource => resource.id);
-                    const overlappingResourceIds = overlappingEvent.getResources().map(resource => resource.id);
-                    const resourceOverlap = resourceIds.some(id => overlappingResourceIds.includes(id));
-                    if (!resourceOverlap) {
-                    if (eventEnd > overlappingEvent.start && eventStart < overlappingEvent.end) {
-                        // If there is an overlapping event, revert the change and show an error message
-                        info.revert();
-                        alert('Ereignis kann nicht gelöscht werden, da es sich mit einem anderen Ereignis mit demselben Titel überschneidet.');
-                        return;
+                    // Check for overlapping events across different resources
+                    const eventStart = info.event.start;
+                    const eventEnd = info.event.end;
+                    for (const overlappingEvent of overlapping_events) {
+                        const resourceIds = info.event.getResources().map(resource => resource.id);
+                        const overlappingResourceIds = overlappingEvent.getResources().map(resource => resource.id);
+                        const resourceOverlap = resourceIds.some(id => overlappingResourceIds.includes(id));
+                        if (!resourceOverlap) {
+                        if (eventEnd > overlappingEvent.start && eventStart < overlappingEvent.end) {
+                            // If there is an overlapping event, revert the change and show an error message
+                            info.revert();
+                            alert('Ereignis kann nicht gelöscht werden, da es sich mit einem anderen Ereignis mit demselben Titel überschneidet.');
+                            return;
+                        }
+                        }
                     }
+
+                    var bck_event;
+                    for (let i = 0; i < all_events.length; i++) {
+                        if (all_events[i].classNames[0] === "bck"){
+                        bck_event = all_events[i]
+                        }
                     }
-                }
-
-                var bck_event;
-                for (let i = 0; i < all_events.length; i++) {
-                    if (all_events[i].classNames[0] === "bck"){
-                    bck_event = all_events[i]
+                    if(info.event.classNames[0] === "fwd"){
+                        var override_start = info.event.start;
+                        var override_end = info.event.end;
+                        if(info.event.end > gmtTime_view_end){
+                        override_end = gmtTime_view_end;
+                        }
+                        if(info.event.start < gmtTime_view_start){
+                        override_start = gmtTime_view_start;
+                        }
                     }
-                }
-                if(info.event.classNames[0] === "fwd"){
-                    var override_start = info.event.start;
-                    var override_end = info.event.end;
-                    if(info.event.end > gmtTime_view_end){
-                    override_end = gmtTime_view_end;
+
+                    if(info.event.end > bck_event.end){
+                        var numerator = bck_event.end - override_start;
+                        var denominator = override_end - override_start;
+                        var delta = numerator*100/denominator;
+                        info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
                     }
-                    if(info.event.start < gmtTime_view_start){
-                    override_start = gmtTime_view_start;
+                    else{
+                        info.el.style.background = `blue`;
                     }
-                }
 
-                if(info.event.end > bck_event.end){
-                    var numerator = bck_event.end - override_start;
-                    var denominator = override_end - override_start;
-                    var delta = numerator*100/denominator;
-                    info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
-                }
-                else{
-                    info.el.style.background = `blue`;
-                }
+                    const start_s = new Date(info.event.start);
+                    const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                    const end_s = new Date(info.event.end);
+                    const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                const start_s = new Date(info.event.start);
-                const startISOString = start_s.toISOString().substring(0, 19) + "Z";
-                const end_s = new Date(info.event.end);
-                const endISOString = end_s.toISOString().substring(0, 19) + "Z";
+                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
+                    const formData = new FormData();
+                    for (let key in jobs_data) {
+                    formData.append(key, jobs_data[key]);
+                    }
 
-                const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
-                const formData = new FormData();
-                for (let key in jobs_data) {
-                formData.append(key, jobs_data[key]);
+                    axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
+                    .then(response => {
+                        console.log(response.data);
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
                 }
-
-                axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
-                .then(response => {
-                    console.log(response.data);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+                else {
+                    // If the selected machine is not allowed, revert the event to its original position
+                    info.revert();
+                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                }
             },  
             eventDrop: (info) => {
-                let calendar: any = this.$refs.prodcalendar.getApi();
-                let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
-                let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
-                let offset_start = view_start.getTimezoneOffset();
-                let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
-                let offset_end = view_end.getTimezoneOffset();
-                let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
+                if(info.event.classNames[0] !== "fwd_db" && info.event.classNames[0] !== "bck_db"){
+                    let calendar: any = this.$refs.prodcalendar.getApi();
+                    let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
+                    let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
+                    let offset_start = view_start.getTimezoneOffset();
+                    let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
+                    let offset_end = view_end.getTimezoneOffset();
+                    let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
 
-                var resources = info.event.getResources();
-                var all_events = resources[0].getEvents();
-                
-                // Get all events with the same title, but exclude the current event
-                const res = calendar.getResources();
-                const all_events_in_calandar = res.flatMap(resource => resource.getEvents())
-                const overlapping_events = all_events_in_calandar.filter(event => {
-                    return (event.title === info.event.title && event !== info.event);
-                });
+                    var resources = info.event.getResources();
+                    var all_events = resources[0].getEvents();
+                    
+                    // Get all events with the same title, but exclude the current event
+                    const res = calendar.getResources();
+                    const all_events_in_calandar = res.flatMap(resource => resource.getEvents())
+                    const overlapping_events = all_events_in_calandar.filter(event => {
+                        return (event.title === info.event.title && event !== info.event);
+                    });
 
-                // Check for overlapping events across different resources
-                const eventStart = info.event.start;
-                const eventEnd = info.event.end;
-                for (const overlappingEvent of overlapping_events) {
-                    const resourceIds = info.event.getResources().map(resource => resource.id);
-                    const overlappingResourceIds = overlappingEvent.getResources().map(resource => resource.id);
-                    const resourceOverlap = resourceIds.some(id => overlappingResourceIds.includes(id));
-                    if (!resourceOverlap) {
-                    if (eventEnd > overlappingEvent.start && eventStart < overlappingEvent.end) {
-                        // If there is an overlapping event, revert the change and show an error message
-                        info.revert();
-                        alert('Ereignis kann nicht gelöscht werden, da es sich mit einem anderen Ereignis mit demselben Titel überschneidet.');
-                        return;
+                    // Check for overlapping events across different resources
+                    const eventStart = info.event.start;
+                    const eventEnd = info.event.end;
+                    for (const overlappingEvent of overlapping_events) {
+                        const resourceIds = info.event.getResources().map(resource => resource.id);
+                        const overlappingResourceIds = overlappingEvent.getResources().map(resource => resource.id);
+                        const resourceOverlap = resourceIds.some(id => overlappingResourceIds.includes(id));
+                        if (!resourceOverlap) {
+                        if (eventEnd > overlappingEvent.start && eventStart < overlappingEvent.end) {
+                            // If there is an overlapping event, revert the change and show an error message
+                            info.revert();
+                            alert('Ereignis kann nicht gelöscht werden, da es sich mit einem anderen Ereignis mit demselben Titel überschneidet.');
+                            return;
+                        }
+                        }
                     }
+
+                    var bck_event;
+                    for (let i = 0; i < all_events.length; i++) {
+                        if (all_events[i].classNames[0] === "bck"){
+                        bck_event = all_events[i]
+                        }
                     }
-                }
-
-                var bck_event;
-                for (let i = 0; i < all_events.length; i++) {
-                    if (all_events[i].classNames[0] === "bck"){
-                    bck_event = all_events[i]
+                    if(info.event.classNames[0] === "fwd"){
+                        var override_start = info.event.start;
+                        var override_end = info.event.end;
+                        if(info.event.end > gmtTime_view_end){
+                        override_end = gmtTime_view_end;
+                        }
+                        if(info.event.start < gmtTime_view_start){
+                        override_start = gmtTime_view_start;
+                        }
                     }
-                }
-                if(info.event.classNames[0] === "fwd"){
-                    var override_start = info.event.start;
-                    var override_end = info.event.end;
-                    if(info.event.end > gmtTime_view_end){
-                    override_end = gmtTime_view_end;
+
+                    if(info.event.end > bck_event.end){
+                        var numerator = bck_event.end - override_start;
+                        var denominator = override_end - override_start;
+                        var delta = numerator*100/denominator;
+                        info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
                     }
-                    if(info.event.start < gmtTime_view_start){
-                    override_start = gmtTime_view_start;
+                    else{
+                        info.el.style.background = `blue`;
                     }
-                }
 
-                if(info.event.end > bck_event.end){
-                    var numerator = bck_event.end - override_start;
-                    var denominator = override_end - override_start;
-                    var delta = numerator*100/denominator;
-                    info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
-                }
-                else{
-                    info.el.style.background = `blue`;
-                }
+                    const start_s = new Date(info.event.start);
+                    const startISOString = start_s.toISOString().substring(0, 19) + "Z";
+                    const end_s = new Date(info.event.end);
+                    const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                const start_s = new Date(info.event.start);
-                const startISOString = start_s.toISOString().substring(0, 19) + "Z";
-                const end_s = new Date(info.event.end);
-                const endISOString = end_s.toISOString().substring(0, 19) + "Z";
+                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
+                    const formData = new FormData();
+                    for (let key in jobs_data) {
+                    formData.append(key, jobs_data[key]);
+                    }
 
-                const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
-                const formData = new FormData();
-                for (let key in jobs_data) {
-                formData.append(key, jobs_data[key]);
+                    axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
+                    .then(response => {
+                        console.log(response.data);
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
                 }
-
-                axios.post('http://' + window.location.hostname + ':8001/api/jobs/setInd/', formData)
-                .then(response => {
-                    console.log(response.data);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
+                else {
+                    // If the selected machine is not allowed, revert the event to its original position
+                    info.revert();
+                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                }
             },       
-            mounted() {
-                this.$nextTick(() => {
-                    let calendar = this.$refs.prodcalendar.getApi();
-                    let currentView = calendar.view;
-                    console.log(currentView.type);
-                })
-            }
+
             },
         }
     },
+    methods: {
+        handleButtonClick() {
+        // Method to be invoked when a button is clicked
+        this.isLoading = true;
+        const calendarApi = this.$refs.prodcalendar.getApi();
+        const { activeStart, activeEnd} = calendarApi.view;
+        console.log('Button clicked:', calendarApi.view, activeStart, activeEnd);
+        const info_json = {
+            info_start: activeStart,
+            info_end: activeEnd
+        };
+        const formData = new FormData();
+        for (let key in info_json) {
+            formData.append(key, info_json[key]);
+        }
+        axios.post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteData/', formData)
+            .then(response => {
+            var output_resp = response.data;
+            var output = output_resp["Schulte_data"];
 
+            var events_var_db = [];
+            for (var i = 0; i < output.length; ++i) {
+                if (output[i]["Ende"] === null) {
+                output[i]["Ende"] = output[i]["end"];
+                }
+                var bck_event = {
+                    "resourceId":output[i]["AKNR"],
+                    "title":output[i]["AKNR"],
+                    "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
+                    "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
+                    "eventColor":"yellow",
+                    "display":'background',
+                    "className": "bck_db"
+                };
+                var temp_event = {
+                    "resourceId": output[i]["Maschine"],
+                    "title": output[i]["AKNR"],
+                    "start": output[i]["Start"],
+                    "end": output[i]["Ende"],
+                    "eventColor": "green",
+                    "display": 'auto',
+                    "className": "fwd_db",
+                    "extendedProps": {
+                        "machines": output[i]["Maschine"],
+                        "TeilNr": output[i]["TeilNr"],
+                        "SchrittNr": output[i]["SchrittNr"]
+                }
+                };
+                events_var_db.push(bck_event);
+                events_var_db.push(temp_event);
+            }
+
+            var resources_var_db = [];
+
+            for (var i = 0; i < output.length; ++i) {
+                var temp_res = {
+                "id": output[i]["Maschine"],
+                "title": output[i]["Maschine"]
+                };
+                resources_var_db.push(temp_res);
+            }
+
+            // Merge events_var_db with existing events
+            this.calendarOptions.events = this.calendarOptions.events.filter(event => {
+                return !event.className.includes("fwd_db");
+            }).concat(events_var_db);
+
+            // Merge resources_var_db with existing resources
+            resources_var_db.forEach(resource => {
+                const existingResource = this.calendarOptions.resources.find(r => r.id === resource.id);
+                if (!existingResource) {
+                this.calendarOptions.resources.push(resource);
+                }
+            });
+            this.isLoading = false;
+            // Log the number of events
+            console.log("No. of events", this.calendarOptions.events.length);
+            })
+            .catch(error => {
+            console.log(error);
+            this.isLoading = false;
+            });
+        },
+    },
+    mounted() {
+        // Register click event listeners for the buttons
+        const buttons = document.querySelectorAll('.fc-button');
+        buttons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            const buttonName = event.target.getAttribute('data-navlink');
+            this.handleButtonClick();
+        });
+        });
+    },
    async created(){
             var response = await fetch('http://' + window.location.hostname + ':8001/api/jobs/getSchedule')
             var output_resp = await response.json()
@@ -411,11 +571,11 @@ export default defineComponent({
 </script>
 
 <style>
-.bck{
+.bck, .bck_db{
     height:10px;
     vertical-align: center;
 }
-.fwd{
+.fwd, .fwd_db{
     height:20px;
     vertical-align: center;
 }
@@ -442,5 +602,19 @@ export default defineComponent({
 .fc .fc-toolbar-title, .fc .fc-toolbar-title:hover {
   color:blue;
   background-color: #FFFFFF;
+}
+.calendar-container {
+  position: relative;
+}
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

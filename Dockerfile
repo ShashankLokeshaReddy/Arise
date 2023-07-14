@@ -31,10 +31,10 @@ RUN pip install pyodbc
 
 # Configure ODBC data source
 # RUN echo "[YourDataSourceName]" >> /etc/odbc.ini
-# RUN echo "Driver=ODBC Driver 17 for SQL Server" >> /etc/odbc.ini
-# RUN echo "Server=192.168.1.9" >> /etc/odbc.ini
-# RUN echo "Database=schulte_copy" >> /etc/odbc.ini
-# RUN echo "UID=ARISE" >> /etc/odbc.ini
-# RUN echo "PWD=4FbC2zF2" >> /etc/odbc.ini
+RUN echo "Driver=ODBC Driver 17 for SQL Server" >> /etc/odbc.ini
+RUN echo "Server=192.168.1.9" >> /etc/odbc.ini
+RUN echo "Database=schulte_copy" >> /etc/odbc.ini
+RUN echo "UID=ARISE" >> /etc/odbc.ini
+RUN echo "PWD=4FbC2zF2" >> /etc/odbc.ini
 
 # Continue with the rest of your Dockerfile...

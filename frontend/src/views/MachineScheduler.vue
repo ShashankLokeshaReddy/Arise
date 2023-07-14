@@ -271,18 +271,18 @@ export default defineComponent({
                 output[i]["Ende"] = output[i]["end"];
                 }
                 var temp_event = {
-                "resourceId": output[i]["Maschine"],
-                "title": output[i]["AKNR"],
-                "start": output[i]["Start"],
-                "end": output[i]["Ende"],
-                "eventColor": "green",
-                "display": 'auto',
-                "className": "fwd_db",
-                "extendedProps": {
-                    "machines": output[i]["Maschine"],
-                    "TeilNr": output[i]["TeilNr"],
-                    "SchrittNr": output[i]["SchrittNr"]
-                }
+                    "resourceId": output[i]["Maschine"],
+                    "title": output[i]["AKNR"],
+                    "start": output[i]["Start"],
+                    "end": output[i]["Ende"],
+                    "eventColor": "green",
+                    "display": 'auto',
+                    "className": "fwd_db",
+                    "extendedProps": {
+                        "machines": output[i]["Maschine"],
+                        "TeilNr": output[i]["TeilNr"],
+                        "SchrittNr": output[i]["SchrittNr"]
+                    }
                 };
                 events_var_db.push(temp_event);
             }
