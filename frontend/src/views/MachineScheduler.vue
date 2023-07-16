@@ -13,6 +13,29 @@
 
       <FullCalendar ref="machinecalendar" :options="calendarOptions"></FullCalendar>
     </div>
+
+    <!-- Event details popup -->
+    <v-dialog v-model="showEventPopup" max-width="500px">
+      <v-card class="event-popup">
+        <v-card-title>
+          <span class="headline">Jobdetails</span>
+        </v-card-title>
+        <v-card-text>
+          <p>Fefco_Teil: {{ selectedEvent.extendedProps.Fefco_Teil }}</p>
+          <p>ArtNr_Teil: {{ selectedEvent.extendedProps.ArtNr_Teil }}</p>
+          <p>AKNR: {{ selectedEvent.title }}</p>
+          <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
+          <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Start: {{ selectedEvent.start }}</p>
+          <p>End: {{ selectedEvent.end }}</p>
+          <p>Lieferdatum_Rohmaterial: {{ selectedEvent.Lieferdatum_Rohmaterial }}</p>
+          <p>LTermin: {{ selectedEvent.LTermin }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="blue darken-1" text @click="closeEventPopup" class="close-button">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -35,6 +58,10 @@ export default defineComponent({
     components: {FullCalendar},
     data()  {
         return {
+            selectedEvent: null,
+            showEventPopup: false,
+            eventPopupClass: '',
+            clickTimer: null,
             isLoading: false,
             calendarApi: null,
             calendarOptions: {
@@ -138,6 +165,10 @@ export default defineComponent({
 
             resources: [],
             events: [] as { resourceId : string; title: string; start: Date; end: Date; eventTextColor : string;}[],
+            eventClick: (info) => {
+                this.selectedEvent = info.event;
+                this.showEventPopup = true; // Open the popup
+            },
             eventDidMount: (info) => {
                 if(info.event.classNames[0] === "fwd"){
                     info.el.style.background = `blue`;
@@ -166,6 +197,8 @@ export default defineComponent({
                             AKNR: info.event.title,
                             TeilNr: info.event.extendedProps.TeilNr,
                             SchrittNr: info.event.extendedProps.SchrittNr,
+                            Fefco_Teil: info.event.extendedProps.Fefco_Teil,
+                            ArtNr_Teil: info.event.extendedProps.ArtNr_Teil,
                             Start: startISOString,
                             Ende: endISOString,
                             Maschine: selectedMachine
@@ -212,6 +245,8 @@ export default defineComponent({
                             AKNR: info.event.title,
                             TeilNr: info.event.extendedProps.TeilNr,
                             SchrittNr: info.event.extendedProps.SchrittNr,
+                            Fefco_Teil: info.event.extendedProps.Fefco_Teil,
+                            ArtNr_Teil: info.event.extendedProps.ArtNr_Teil,
                             Start: startISOString,
                             Ende: endISOString,
                             Maschine: selectedMachine
@@ -246,6 +281,10 @@ export default defineComponent({
         }
     },
     methods: {
+        closeEventPopup() {
+            this.showEventPopup = false;
+            // this.selectedEvent = null;
+        },
         handleButtonClick() {
         // Method to be invoked when a button is clicked
         this.isLoading = true;
@@ -281,7 +320,9 @@ export default defineComponent({
                     "extendedProps": {
                         "machines": output[i]["Maschine"],
                         "TeilNr": output[i]["TeilNr"],
-                        "SchrittNr": output[i]["SchrittNr"]
+                        "SchrittNr": output[i]["SchrittNr"],
+                        "Fefco_Teil": output[i]["Fefco_Teil"],
+                        "ArtNr_Teil": output[i]["ArtNr_Teil"]
                     }
                 };
                 events_var_db.push(temp_event);
@@ -352,7 +393,9 @@ export default defineComponent({
                 "extendedProps": {
                     "machines": output[i]["Maschine"],
                     "TeilNr": output[i]["TeilNr"],
-                    "SchrittNr": output[i]["SchrittNr"]
+                    "SchrittNr": output[i]["SchrittNr"],
+                    "Fefco_Teil": output[i]["Fefco_Teil"],
+                    "ArtNr_Teil": output[i]["ArtNr_Teil"]
                 }
             };
             events_var.push(temp_event);
@@ -415,7 +458,7 @@ export default defineComponent({
   color: blue;
 }
 .fc .fc-toolbar-title, .fc .fc-toolbar-title:hover {
-  color:blue;
+  color:orange;
   background-color: #FFFFFF;
 }
 .calendar-container {
@@ -431,5 +474,20 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.event-popup {
+  background-color: #ffffff;
+  color: orange;
+  padding: 20px;
+  border: 1px solid #000000;
+}
+.event-popup button.close-button {
+  border: 1px solid #000000;
+  padding: 5px 10px;
+  background-color: #ffffff;
+  color: #000000;
+}
+.headline {
+  color: black;
 }
 </style>

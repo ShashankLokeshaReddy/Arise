@@ -137,7 +137,7 @@ export default defineComponent({
             resources: [],
             events: [] as { resourceId : string; title: string; start: Date; end: Date; eventTextColor : string;}[],
             eventDidMount: (info) => {
-                if(info.event.classNames[0] !== "fwd_db" && info.event.classNames[0] !== "bck_db"){
+                if(info.event.classNames[0] === "fwd" || info.event.classNames[0] === "bck"){
                     let calendar: any = this.$refs.prodcalendar.getApi();
                     let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
                     let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
@@ -182,8 +182,8 @@ export default defineComponent({
                         info.el.style.color = "white";
                     }
                 }
-                else{
-                    let calendar: any = this.$refs.prodcalendar.getApi();
+                if(info.event.classNames[0] === "fwd_db" || info.event.classNames[0] === "bck_db"){
+					let calendar: any = this.$refs.prodcalendar.getApi();
                     let view_start = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.start;
                     let view_end = calendar.currentData.calendarApi.currentData.dateProfile.activeRange.end;
                     let offset_start = view_start.getTimezoneOffset();
@@ -220,12 +220,12 @@ export default defineComponent({
                         info.el.style.color = "white";
                     }
                     else if(info.event.classNames[0] === "bck_db"){
-                        info.el.style.background = `yellow`;
+                        info.el.style.background = `grey`;
                     }
                     else{
                         info.el.style.background = `green`;
                         info.el.style.color = "white";
-                    }                   
+                    }
                 }
             },
             eventResize: (info) => {
@@ -297,7 +297,7 @@ export default defineComponent({
                     const end_s = new Date(info.event.end);
                     const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
+                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
                     const formData = new FormData();
                     for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
@@ -386,7 +386,7 @@ export default defineComponent({
                     const end_s = new Date(info.event.end);
                     const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr};
+                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
                     const formData = new FormData();
                     for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
@@ -430,34 +430,37 @@ export default defineComponent({
             var output_resp = response.data;
             var output = output_resp["Schulte_data"];
 
-            var events_var_db = [];
+            var events_var_db = []
             for (var i = 0; i < output.length; ++i) {
-                if (output[i]["Ende"] === null) {
-                output[i]["Ende"] = output[i]["end"];
+                if(output[i]["Ende"]===null){
+                    output[i]["Ende"] = output[i]["LTermin"]
                 }
                 var bck_event = {
                     "resourceId":output[i]["AKNR"],
                     "title":output[i]["AKNR"],
                     "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
                     "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
-                    "eventColor":"yellow",
+                    "eventColor":"grey",
                     "display":'background',
                     "className": "bck_db"
                 };
                 var temp_event = {
-                    "resourceId": output[i]["Maschine"],
-                    "title": output[i]["AKNR"],
-                    "start": output[i]["Start"],
-                    "end": output[i]["Ende"],
-                    "eventColor": "green",
-                    "display": 'auto',
+                    "resourceId":output[i]["AKNR"],
+                    "title":output[i]["Maschine"],
+                    "start":output[i]["Start"],
+                    "end":output[i]["Ende"],
+                    "eventColor":"green",
+                    "display":'auto',
                     "className": "fwd_db",
                     "extendedProps": {
                         "machines": output[i]["Maschine"],
                         "TeilNr": output[i]["TeilNr"],
-                        "SchrittNr": output[i]["SchrittNr"]
-                }
+                        "SchrittNr": output[i]["SchrittNr"],
+                        "Fefco_Teil": output[i]["Fefco_Teil"],
+                        "ArtNr_Teil": output[i]["ArtNr_Teil"]
+                    }
                 };
+
                 events_var_db.push(bck_event);
                 events_var_db.push(temp_event);
             }
@@ -466,8 +469,8 @@ export default defineComponent({
 
             for (var i = 0; i < output.length; ++i) {
                 var temp_res = {
-                "id": output[i]["Maschine"],
-                "title": output[i]["Maschine"]
+                "id": output[i]["AKNR"],
+                "title": output[i]["AKNR"]
                 };
                 resources_var_db.push(temp_res);
             }
@@ -536,7 +539,9 @@ export default defineComponent({
                     "extendedProps": {
                         "machines": output[i]["Maschine"],
                         "TeilNr": output[i]["TeilNr"],
-                        "SchrittNr": output[i]["SchrittNr"]
+                        "SchrittNr": output[i]["SchrittNr"],
+                        "Fefco_Teil": output[i]["Fefco_Teil"],
+                        "ArtNr_Teil": output[i]["ArtNr_Teil"]
                     }
                 };
 
@@ -600,7 +605,7 @@ export default defineComponent({
   color: blue;
 }
 .fc .fc-toolbar-title, .fc .fc-toolbar-title:hover {
-  color:blue;
+  color:orange;
   background-color: #FFFFFF;
 }
 .calendar-container {
