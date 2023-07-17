@@ -17,10 +17,18 @@ Taks done:
 		sudo snap install docker
 		sudo docker compose up
 		sudo docker ps
-		docker exec -it arise_app-web-1 bash
+		docker exec -it arise_app-web-1 bash or sudo docker exec -it e689727c4775 bash
 		cd django_prototype
+		python manage.py migrate
 		python manage.py createsuperuser --username=arise --email=arise
 		Next -> http://192.168.1.8:8081/ and http://192.168.1.8:8001/ in local machine
+		
+	steps to be followed for starting container:
+		Connect to server 192.168.1.8 using putty
+		User: arise and pwd: 4FbC2zF2
+		navigate to the folder named Arise_App by typing cmd - cd Desktop/Arise_App
+		Type cmd - sudo docker compose up to start the container
+		Once started, we can open it using the URL in the client machine - http://192.168.1.8:8081/ 
 
 Next steps:
 	Shashank and Phillip: 

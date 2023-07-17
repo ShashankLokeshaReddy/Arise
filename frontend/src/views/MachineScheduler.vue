@@ -26,10 +26,10 @@
           <p>AKNR: {{ selectedEvent.title }}</p>
           <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
           <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
-          <p>Start: {{ selectedEvent.start }}</p>
-          <p>End: {{ selectedEvent.end }}</p>
-          <p>Lieferdatum_Rohmaterial: {{ selectedEvent.Lieferdatum_Rohmaterial }}</p>
-          <p>LTermin: {{ selectedEvent.LTermin }}</p>
+          <p>Start: {{ selectedEvent.extendedProps.Start }}</p>
+          <p>Ende: {{ selectedEvent.extendedProps.Ende }}</p>
+          <p>Lieferdatum_Rohmaterial: {{ selectedEvent.extendedProps.Lieferdatum_Rohmaterial }}</p>
+          <p>LTermin: {{ selectedEvent.extendedProps.LTermin }}</p>
         </v-card-text>
         <v-card-actions>
           <v-btn color="blue darken-1" text @click="closeEventPopup" class="close-button">Close</v-btn>
@@ -58,10 +58,9 @@ export default defineComponent({
     components: {FullCalendar},
     data()  {
         return {
+            fetchScheduledJobs: false,
             selectedEvent: null,
             showEventPopup: false,
-            eventPopupClass: '',
-            clickTimer: null,
             isLoading: false,
             calendarApi: null,
             calendarOptions: {
@@ -127,9 +126,9 @@ export default defineComponent({
             datesSet: this.handleDatesSet,
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
-                left: 'prev today next myCustomButton',
+                left: 'prev today next toggleSwitch',
                 center: 'title',
-                right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay',
+                right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay myCustomButton',
             },
             customButtons: {
                 myCustomButton: {
@@ -151,7 +150,13 @@ export default defineComponent({
                                 console.log(error);
                             });
                     }
-                }
+                },
+                toggleSwitch: {
+                    text: 'Geplante Jobs abrufen',
+                    click: () => {
+                        this.fetchScheduledJobs = !this.fetchScheduledJobs;
+                    },
+                },
             },
             weekends: true,
             editable: true,
@@ -286,78 +291,102 @@ export default defineComponent({
             // this.selectedEvent = null;
         },
         handleButtonClick() {
-        // Method to be invoked when a button is clicked
-        this.isLoading = true;
-        const calendarApi = this.$refs.machinecalendar.getApi();
-        const { activeStart, activeEnd} = calendarApi.view;
-        console.log('Button clicked:', calendarApi.view, activeStart, activeEnd);
-        const info_json = {
-            info_start: activeStart,
-            info_end: activeEnd
-        };
-        const formData = new FormData();
-        for (let key in info_json) {
-            formData.append(key, info_json[key]);
-        }
-        axios.post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteData/', formData)
-            .then(response => {
-            var output_resp = response.data;
-            var output = output_resp["Schulte_data"];
-
-            var events_var_db = [];
-            for (var i = 0; i < output.length; ++i) {
-                if (output[i]["Ende"] === null) {
-                output[i]["Ende"] = output[i]["end"];
+            if (this.fetchScheduledJobs) {
+                // Method to be invoked when a button is clicked
+                this.isLoading = true;
+                const calendarApi = this.$refs.machinecalendar.getApi();
+                const { activeStart, activeEnd} = calendarApi.view;
+                console.log('Button clicked:', calendarApi.view, activeStart, activeEnd);
+                const info_json = {
+                    info_start: activeStart,
+                    info_end: activeEnd
+                };
+                const formData = new FormData();
+                for (let key in info_json) {
+                    formData.append(key, info_json[key]);
                 }
-                var temp_event = {
-                    "resourceId": output[i]["Maschine"],
-                    "title": output[i]["AKNR"],
-                    "start": output[i]["Start"],
-                    "end": output[i]["Ende"],
-                    "eventColor": "green",
-                    "display": 'auto',
-                    "className": "fwd_db",
-                    "extendedProps": {
-                        "machines": output[i]["Maschine"],
-                        "TeilNr": output[i]["TeilNr"],
-                        "SchrittNr": output[i]["SchrittNr"],
-                        "Fefco_Teil": output[i]["Fefco_Teil"],
-                        "ArtNr_Teil": output[i]["ArtNr_Teil"]
+                axios.post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteData/', formData)
+                    .then(response => {
+                    var output_resp = response.data;
+                    var output = output_resp["Schulte_data"];
+
+                    var events_var_db = [];
+                    for (var i = 0; i < output.length; ++i) {
+                        if (output[i]["Ende"] === null) {
+                        output[i]["Ende"] = output[i]["end"];
+                        }
+                        var temp_event = {
+                            "resourceId": output[i]["Maschine"],
+                            "title": output[i]["AKNR"],
+                            "start": output[i]["Start"],
+                            "end": output[i]["Ende"],
+                            "eventColor": "green",
+                            "display": 'auto',
+                            "className": "fwd_db",
+                            "extendedProps": {
+                                "machines": output[i]["Maschine"],
+                                "TeilNr": output[i]["TeilNr"],
+                                "SchrittNr": output[i]["SchrittNr"],
+                                "Fefco_Teil": output[i]["Fefco_Teil"],
+                                "ArtNr_Teil": output[i]["ArtNr_Teil"],
+                                "Start": output[i]["Start"],
+                                "Ende": output[i]["Ende"],
+                                "Lieferdatum_Rohmaterial": output[i]["Lieferdatum_Rohmaterial"],
+                                "LTermin": output[i]["LTermin"]
+                            }
+                        };
+                        events_var_db.push(temp_event);
                     }
-                };
-                events_var_db.push(temp_event);
+
+                    var resources_var_db = [];
+
+                    for (var i = 0; i < output.length; ++i) {
+                        var temp_res = {
+                        "id": output[i]["Maschine"],
+                        "title": output[i]["Maschine"]
+                        };
+                        resources_var_db.push(temp_res);
+                    }
+
+                    // Merge events_var_db with existing events
+                    this.calendarOptions.events = this.calendarOptions.events.filter(event => {
+                        return !event.className.includes("fwd_db");
+                    }).concat(events_var_db);
+
+                    // Merge resources_var_db with existing resources
+                    resources_var_db.forEach(resource => {
+                        const existingResource = this.calendarOptions.resources.find(r => r.id === resource.id);
+                        if (!existingResource) {
+                        this.calendarOptions.resources.push(resource);
+                        }
+                    });
+                    this.isLoading = false;
+                    // Log the number of events
+                    console.log("No. of events", this.calendarOptions.events.length);
+                    })
+                    .catch(error => {
+                    console.log(error);
+                    this.isLoading = false;
+                    });
             }
+            else{
+                // Remove events with the 'fwd_db' class
+                this.isLoading = true;
+                this.calendarOptions.events = this.calendarOptions.events.filter(
+                (event) => !event.className.includes('fwd_db')
+                );
 
-            var resources_var_db = [];
+                // Get the resource IDs associated with remaining events
+                const remainingResourceIds = this.calendarOptions.events
+                .filter((event) => event.className.includes('fwd'))
+                .map((event) => event.resourceId);
 
-            for (var i = 0; i < output.length; ++i) {
-                var temp_res = {
-                "id": output[i]["Maschine"],
-                "title": output[i]["Maschine"]
-                };
-                resources_var_db.push(temp_res);
+                // Remove resources not associated with 'fwd' events
+                this.calendarOptions.resources = this.calendarOptions.resources.filter((resource) =>
+                remainingResourceIds.includes(resource.id)
+                );
+                this.isLoading = false;
             }
-
-            // Merge events_var_db with existing events
-            this.calendarOptions.events = this.calendarOptions.events.filter(event => {
-                return !event.className.includes("fwd_db");
-            }).concat(events_var_db);
-
-            // Merge resources_var_db with existing resources
-            resources_var_db.forEach(resource => {
-                const existingResource = this.calendarOptions.resources.find(r => r.id === resource.id);
-                if (!existingResource) {
-                this.calendarOptions.resources.push(resource);
-                }
-            });
-            this.isLoading = false;
-            // Log the number of events
-            console.log("No. of events", this.calendarOptions.events.length);
-            })
-            .catch(error => {
-            console.log(error);
-            this.isLoading = false;
-            });
         },
     },
     mounted() {
@@ -379,9 +408,6 @@ export default defineComponent({
         
         var events_var = []
         for (var i = 0; i < output.length; ++i) {
-            if(output[i]["Ende"]===null){
-                output[i]["Ende"] = output[i]["end"]
-            }
             var temp_event = {
                 "resourceId":output[i]["Maschine"],
                 "title":output[i]["AKNR"],
@@ -395,7 +421,11 @@ export default defineComponent({
                     "TeilNr": output[i]["TeilNr"],
                     "SchrittNr": output[i]["SchrittNr"],
                     "Fefco_Teil": output[i]["Fefco_Teil"],
-                    "ArtNr_Teil": output[i]["ArtNr_Teil"]
+                    "ArtNr_Teil": output[i]["ArtNr_Teil"],
+                    "Start": output[i]["Start"],
+                    "Ende": output[i]["Ende"],
+                    "Lieferdatum_Rohmaterial": output[i]["Lieferdatum_Rohmaterial"],
+                    "LTermin": output[i]["LTermin"]             
                 }
             };
             events_var.push(temp_event);

@@ -13,6 +13,29 @@
 
       <FullCalendar ref="prodcalendar" :options="calendarOptions"></FullCalendar>
     </div>
+
+    <!-- Event details popup -->
+    <v-dialog v-model="showEventPopup" max-width="500px">
+      <v-card class="event-popup">
+        <v-card-title>
+          <span class="headline">Jobdetails</span>
+        </v-card-title>
+        <v-card-text>
+          <p>Fefco_Teil: {{ selectedEvent.extendedProps.Fefco_Teil }}</p>
+          <p>ArtNr_Teil: {{ selectedEvent.extendedProps.ArtNr_Teil }}</p>
+          <p>AKNR: {{ selectedEvent.title }}</p>
+          <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
+          <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Start: {{ selectedEvent.extendedProps.Start }}</p>
+          <p>Ende: {{ selectedEvent.extendedProps.Ende }}</p>
+          <p>Lieferdatum_Rohmaterial: {{ selectedEvent.extendedProps.Lieferdatum_Rohmaterial }}</p>
+          <p>LTermin: {{ selectedEvent.extendedProps.LTermin }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="blue darken-1" text @click="closeEventPopup" class="close-button">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -35,6 +58,9 @@ export default defineComponent({
     components: {FullCalendar},
     data()  {
         return {
+            fetchScheduledJobs: false,
+            selectedEvent: null,
+            showEventPopup: false,
             isLoading: false,
             calendarApi: null,
             calendarOptions: {
@@ -95,9 +121,9 @@ export default defineComponent({
             initialView: 'resourceTimelineDay',
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
-                left: 'prev next today myCustomButton',
+                left: 'prev next today toggleSwitch',
                 center: 'title',
-                right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay',
+                right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay myCustomButton',
                     },
             customButtons: {
                 myCustomButton: {
@@ -119,7 +145,13 @@ export default defineComponent({
                                 console.log(error);
                             });
                     }
-                }
+                },
+                toggleSwitch: {
+                    text: 'Geplante Jobs abrufen',
+                    click: () => {
+                        this.fetchScheduledJobs = !this.fetchScheduledJobs;
+                    },
+                },
             },
             weekends: true,
             // editable: true, # to ensure that it cannot be dragged to a different resource
@@ -136,6 +168,10 @@ export default defineComponent({
 
             resources: [],
             events: [] as { resourceId : string; title: string; start: Date; end: Date; eventTextColor : string;}[],
+            eventClick: (info) => {
+                this.selectedEvent = info.event;
+                this.showEventPopup = true; // Open the popup
+            },
             eventDidMount: (info) => {
                 if(info.event.classNames[0] === "fwd" || info.event.classNames[0] === "bck"){
                     let calendar: any = this.$refs.prodcalendar.getApi();
@@ -411,90 +447,129 @@ export default defineComponent({
         }
     },
     methods: {
+        closeEventPopup() {
+            this.showEventPopup = false;
+            // this.selectedEvent = null;
+        },
         handleButtonClick() {
-        // Method to be invoked when a button is clicked
-        this.isLoading = true;
-        const calendarApi = this.$refs.prodcalendar.getApi();
-        const { activeStart, activeEnd} = calendarApi.view;
-        console.log('Button clicked:', calendarApi.view, activeStart, activeEnd);
-        const info_json = {
-            info_start: activeStart,
-            info_end: activeEnd
-        };
-        const formData = new FormData();
-        for (let key in info_json) {
-            formData.append(key, info_json[key]);
-        }
-        axios.post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteData/', formData)
-            .then(response => {
-            var output_resp = response.data;
-            var output = output_resp["Schulte_data"];
-
-            var events_var_db = []
-            for (var i = 0; i < output.length; ++i) {
-                if(output[i]["Ende"]===null){
-                    output[i]["Ende"] = output[i]["LTermin"]
-                }
-                var bck_event = {
-                    "resourceId":output[i]["AKNR"],
-                    "title":output[i]["AKNR"],
-                    "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
-                    "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
-                    "eventColor":"grey",
-                    "display":'background',
-                    "className": "bck_db"
+            if (this.fetchScheduledJobs) {            
+                // Method to be invoked when a button is clicked
+                this.isLoading = true;
+                const calendarApi = this.$refs.prodcalendar.getApi();
+                const { activeStart, activeEnd} = calendarApi.view;
+                console.log('Button clicked:', calendarApi.view, activeStart, activeEnd);
+                const info_json = {
+                    info_start: activeStart,
+                    info_end: activeEnd
                 };
-                var temp_event = {
-                    "resourceId":output[i]["AKNR"],
-                    "title":output[i]["Maschine"],
-                    "start":output[i]["Start"],
-                    "end":output[i]["Ende"],
-                    "eventColor":"green",
-                    "display":'auto',
-                    "className": "fwd_db",
-                    "extendedProps": {
-                        "machines": output[i]["Maschine"],
-                        "TeilNr": output[i]["TeilNr"],
-                        "SchrittNr": output[i]["SchrittNr"],
-                        "Fefco_Teil": output[i]["Fefco_Teil"],
-                        "ArtNr_Teil": output[i]["ArtNr_Teil"]
+                const formData = new FormData();
+                for (let key in info_json) {
+                    formData.append(key, info_json[key]);
+                }
+                axios.post('http://' + window.location.hostname + ':8001/api/jobs/getSchulteData/', formData)
+                    .then(response => {
+                    var output_resp = response.data;
+                    var output = output_resp["Schulte_data"];
+
+                    var events_var_db = []
+                    for (var i = 0; i < output.length; ++i) {
+                        if(output[i]["Ende"]===null){
+                            output[i]["Ende"] = output[i]["LTermin"]
+                        }
+                        var bck_event = {
+                            "resourceId":output[i]["AKNR"],
+                            "title":output[i]["AKNR"],
+                            "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
+                            "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
+                            "eventColor":"grey",
+                            "display":'background',
+                            "className": "bck_db",
+                            "extendedProps": {
+                                "machines": output[i]["Maschine"],
+                                "TeilNr": output[i]["TeilNr"],
+                                "SchrittNr": output[i]["SchrittNr"],
+                                "Fefco_Teil": output[i]["Fefco_Teil"],
+                                "ArtNr_Teil": output[i]["ArtNr_Teil"],
+                                "Start": output[i]["Start"],
+                                "Ende": output[i]["Ende"],
+                                "Lieferdatum_Rohmaterial": output[i]["Lieferdatum_Rohmaterial"],
+                                "LTermin": output[i]["LTermin"]
+                            }
+                        };
+                        var temp_event = {
+                            "resourceId":output[i]["AKNR"],
+                            "title":output[i]["Maschine"],
+                            "start":output[i]["Start"],
+                            "end":output[i]["Ende"],
+                            "eventColor":"green",
+                            "display":'auto',
+                            "className": "fwd_db",
+                            "extendedProps": {
+                                "machines": output[i]["Maschine"],
+                                "TeilNr": output[i]["TeilNr"],
+                                "SchrittNr": output[i]["SchrittNr"],
+                                "Fefco_Teil": output[i]["Fefco_Teil"],
+                                "ArtNr_Teil": output[i]["ArtNr_Teil"],
+                                "Start": output[i]["Start"],
+                                "Ende": output[i]["Ende"],
+                                "Lieferdatum_Rohmaterial": output[i]["Lieferdatum_Rohmaterial"],
+                                "LTermin": output[i]["LTermin"]
+                            }
+                        };
+
+                        events_var_db.push(bck_event);
+                        events_var_db.push(temp_event);
                     }
-                };
 
-                events_var_db.push(bck_event);
-                events_var_db.push(temp_event);
+                    var resources_var_db = [];
+
+                    for (var i = 0; i < output.length; ++i) {
+                        var temp_res = {
+                        "id": output[i]["AKNR"],
+                        "title": output[i]["AKNR"]
+                        };
+                        resources_var_db.push(temp_res);
+                    }
+
+                    // Merge events_var_db with existing events
+                    this.calendarOptions.events = this.calendarOptions.events.filter(event => {
+                        return !event.className.includes("fwd_db");
+                    }).concat(events_var_db);
+
+                    // Merge resources_var_db with existing resources
+                    resources_var_db.forEach(resource => {
+                        const existingResource = this.calendarOptions.resources.find(r => r.id === resource.id);
+                        if (!existingResource) {
+                        this.calendarOptions.resources.push(resource);
+                        }
+                    });
+                    this.isLoading = false;
+                    // Log the number of events
+                    console.log("No. of events", this.calendarOptions.events.length);
+                    })
+                    .catch(error => {
+                    console.log(error);
+                    this.isLoading = false;
+                    });
             }
+            else{
+                // Remove events with the 'fwd_db' and 'bck_db' classes
+                this.isLoading = true;
+                this.calendarOptions.events = this.calendarOptions.events.filter(
+                (event) => !(event.className.includes('fwd_db') || event.className.includes('bck_db'))
+                );
 
-            var resources_var_db = [];
+                // Get the resource IDs associated with remaining 'fwd' or 'bck' events
+                const remainingResourceIds = this.calendarOptions.events
+                .filter((event) => event.className.includes('fwd') || event.className.includes('bck'))
+                .map((event) => event.resourceId);
 
-            for (var i = 0; i < output.length; ++i) {
-                var temp_res = {
-                "id": output[i]["AKNR"],
-                "title": output[i]["AKNR"]
-                };
-                resources_var_db.push(temp_res);
-            }
-
-            // Merge events_var_db with existing events
-            this.calendarOptions.events = this.calendarOptions.events.filter(event => {
-                return !event.className.includes("fwd_db");
-            }).concat(events_var_db);
-
-            // Merge resources_var_db with existing resources
-            resources_var_db.forEach(resource => {
-                const existingResource = this.calendarOptions.resources.find(r => r.id === resource.id);
-                if (!existingResource) {
-                this.calendarOptions.resources.push(resource);
-                }
-            });
-            this.isLoading = false;
-            // Log the number of events
-            console.log("No. of events", this.calendarOptions.events.length);
-            })
-            .catch(error => {
-            console.log(error);
-            this.isLoading = false;
-            });
+                // Remove resources not associated with remaining 'fwd' or 'bck' events
+                this.calendarOptions.resources = this.calendarOptions.resources.filter((resource) =>
+                remainingResourceIds.includes(resource.id)
+                );
+                this.isLoading = false;
+            }            
         },
     },
     mounted() {
@@ -516,9 +591,6 @@ export default defineComponent({
             
             var events_var = []
             for (var i = 0; i < output.length; ++i) {
-                if(output[i]["Ende"]===null){
-                    output[i]["Ende"] = output[i]["LTermin"]
-                }
                 var bck_event = {
                     "resourceId":output[i]["AKNR"],
                     "title":output[i]["AKNR"],
@@ -526,7 +598,18 @@ export default defineComponent({
                     "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                     "eventColor":"orange",
                     "display":'background',
-                    "className": "bck"
+                    "className": "bck",
+                    "extendedProps": {
+                        "machines": output[i]["Maschine"],
+                        "TeilNr": output[i]["TeilNr"],
+                        "SchrittNr": output[i]["SchrittNr"],
+                        "Fefco_Teil": output[i]["Fefco_Teil"],
+                        "ArtNr_Teil": output[i]["ArtNr_Teil"],
+                        "Start": output[i]["Start"],
+                        "Ende": output[i]["Ende"],
+                        "Lieferdatum_Rohmaterial": output[i]["Lieferdatum_Rohmaterial"],
+                        "LTermin": output[i]["LTermin"]
+                    }                 
                 };
                 var temp_event = {
                     "resourceId":output[i]["AKNR"],
@@ -541,7 +624,11 @@ export default defineComponent({
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
-                        "ArtNr_Teil": output[i]["ArtNr_Teil"]
+                        "ArtNr_Teil": output[i]["ArtNr_Teil"],
+                        "Start": output[i]["Start"],
+                        "Ende": output[i]["Ende"],
+                        "Lieferdatum_Rohmaterial": output[i]["Lieferdatum_Rohmaterial"],
+                        "LTermin": output[i]["LTermin"]
                     }
                 };
 
@@ -621,5 +708,20 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.event-popup {
+  background-color: #ffffff;
+  color: orange;
+  padding: 20px;
+  border: 1px solid #000000;
+}
+.event-popup button.close-button {
+  border: 1px solid #000000;
+  padding: 5px 10px;
+  background-color: #ffffff;
+  color: #000000;
+}
+.headline {
+  color: black;
 }
 </style>
