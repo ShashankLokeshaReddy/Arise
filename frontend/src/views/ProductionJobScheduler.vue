@@ -121,7 +121,7 @@ export default defineComponent({
             initialView: 'resourceTimelineDay',
             schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
             headerToolbar: {
-                left: 'prev next today toggleSwitch',
+                left: 'prev today next toggleSwitch',
                 center: 'title',
                 right: 'resourceTimelineYear resourceTimelineMonth resourceTimelineWeek resourceTimelineDay myCustomButton',
                     },
