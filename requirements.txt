@@ -1,4 +1,5 @@
 pandas
+pyodbc
 numpy
 simpy
 psutil
