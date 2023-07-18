@@ -23,9 +23,10 @@
         <v-card-text>
           <p>Fefco_Teil: {{ selectedEvent.extendedProps.Fefco_Teil }}</p>
           <p>ArtNr_Teil: {{ selectedEvent.extendedProps.ArtNr_Teil }}</p>
-          <p>AKNR: {{ selectedEvent.title }}</p>
+          <p>AKNR: {{ selectedEvent.extendedProps.AKNR }}</p>
           <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
           <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Maschine: {{ selectedEvent.extendedProps.machines }}</p>
           <p>Start: {{ selectedEvent.extendedProps.Start }}</p>
           <p>Ende: {{ selectedEvent.extendedProps.Ende }}</p>
           <p>Lieferdatum_Rohmaterial: {{ selectedEvent.extendedProps.Lieferdatum_Rohmaterial }}</p>
@@ -317,7 +318,7 @@ export default defineComponent({
                         }
                         var temp_event = {
                             "resourceId": output[i]["Maschine"],
-                            "title": output[i]["AKNR"],
+                            "title": output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
                             "start": output[i]["Start"],
                             "end": output[i]["Ende"],
                             "eventColor": "green",
@@ -325,6 +326,7 @@ export default defineComponent({
                             "className": "fwd_db",
                             "extendedProps": {
                                 "machines": output[i]["Maschine"],
+                                "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -410,7 +412,7 @@ export default defineComponent({
         for (var i = 0; i < output.length; ++i) {
             var temp_event = {
                 "resourceId":output[i]["Maschine"],
-                "title":output[i]["AKNR"],
+                "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
                 "start":output[i]["Start"],
                 "end":output[i]["Ende"],
                 "eventColor":"blue",
@@ -418,6 +420,7 @@ export default defineComponent({
                 "className": "fwd",
                 "extendedProps": {
                     "machines": output[i]["Maschine"],
+                    "AKNR": output[i]["AKNR"],
                     "TeilNr": output[i]["TeilNr"],
                     "SchrittNr": output[i]["SchrittNr"],
                     "Fefco_Teil": output[i]["Fefco_Teil"],

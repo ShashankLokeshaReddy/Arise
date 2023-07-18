@@ -23,9 +23,10 @@
         <v-card-text>
           <p>Fefco_Teil: {{ selectedEvent.extendedProps.Fefco_Teil }}</p>
           <p>ArtNr_Teil: {{ selectedEvent.extendedProps.ArtNr_Teil }}</p>
-          <p>AKNR: {{ selectedEvent.title }}</p>
+          <p>AKNR: {{ selectedEvent.extendedProps.AKNR }}</p>
           <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
           <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Maschine: {{ selectedEvent.extendedProps.machines }}</p>
           <p>Start: {{ selectedEvent.extendedProps.Start }}</p>
           <p>Ende: {{ selectedEvent.extendedProps.Ende }}</p>
           <p>Lieferdatum_Rohmaterial: {{ selectedEvent.extendedProps.Lieferdatum_Rohmaterial }}</p>
@@ -477,8 +478,8 @@ export default defineComponent({
                             output[i]["Ende"] = output[i]["LTermin"]
                         }
                         var bck_event = {
-                            "resourceId":output[i]["AKNR"],
-                            "title":output[i]["AKNR"],
+                            "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                            "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
                             "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
                             "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                             "eventColor":"grey",
@@ -486,6 +487,7 @@ export default defineComponent({
                             "className": "bck_db",
                             "extendedProps": {
                                 "machines": output[i]["Maschine"],
+                                "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -497,7 +499,7 @@ export default defineComponent({
                             }
                         };
                         var temp_event = {
-                            "resourceId":output[i]["AKNR"],
+                            "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
                             "title":output[i]["Maschine"],
                             "start":output[i]["Start"],
                             "end":output[i]["Ende"],
@@ -506,6 +508,7 @@ export default defineComponent({
                             "className": "fwd_db",
                             "extendedProps": {
                                 "machines": output[i]["Maschine"],
+                                "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -525,8 +528,8 @@ export default defineComponent({
 
                     for (var i = 0; i < output.length; ++i) {
                         var temp_res = {
-                        "id": output[i]["AKNR"],
-                        "title": output[i]["AKNR"]
+                        "id": output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                        "title": output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"]
                         };
                         resources_var_db.push(temp_res);
                     }
@@ -592,8 +595,8 @@ export default defineComponent({
             var events_var = []
             for (var i = 0; i < output.length; ++i) {
                 var bck_event = {
-                    "resourceId":output[i]["AKNR"],
-                    "title":output[i]["AKNR"],
+                    "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                    "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
                     "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
                     "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                     "eventColor":"orange",
@@ -601,6 +604,7 @@ export default defineComponent({
                     "className": "bck",
                     "extendedProps": {
                         "machines": output[i]["Maschine"],
+                        "AKNR": output[i]["AKNR"],
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -612,7 +616,7 @@ export default defineComponent({
                     }                 
                 };
                 var temp_event = {
-                    "resourceId":output[i]["AKNR"],
+                    "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
                     "title":output[i]["Maschine"],
                     "start":output[i]["Start"],
                     "end":output[i]["Ende"],
@@ -621,6 +625,7 @@ export default defineComponent({
                     "className": "fwd",
                     "extendedProps": {
                         "machines": output[i]["Maschine"],
+                        "AKNR": output[i]["AKNR"],
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -639,8 +644,8 @@ export default defineComponent({
             var resources_var: { id: string; title: string }[] = [];
             for (var i = 0; i < output.length; ++i) {
                 var temp_res = {
-                    "id":output[i]["AKNR"],
-                    "title":output[i]["AKNR"]
+                    "id":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                    "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"]
                 };
                 resources_var.push(temp_res);
             }
