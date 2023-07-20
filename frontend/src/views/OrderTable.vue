@@ -13,11 +13,10 @@
       </v-col>
       <v-col align="center">
         <div class="date-input-container">
-          <label for="startDate" class="date-label">Start Date</label>
-          <input v-model="startDate" type="date" id="startDate" class="date-input">
+          <label for="startDate" class="date-label">LTermin Zwischen</label>
         </div>
         <div class="date-input-container">
-          <label for="endDate" class="date-label">End Date</label>
+          <input v-model="startDate" type="date" id="startDate" class="date-input">
           <input v-model="endDate" type="date" id="endDate" class="date-input">
         </div>
         <button class="custom-button" @click="getUnSchedJobs(startDate, endDate)">Jobs abrufen</button>
@@ -252,7 +251,6 @@ export default {
           console.log(error);
         });
     },
-
     runDeadlineFirst() {
       const confirmed = window.confirm("Möchten Sie den Early Deadline-Algorithmus ausführen?");
       if (!confirmed) {
@@ -270,7 +268,23 @@ export default {
           console.log(error);
         });
     },
-
+    runPLOptimizer() {
+      const confirmed = window.confirm("Möchten Sie den PL-Algorithmus ausführen?");
+      if (!confirmed) {
+        return;
+      }
+      this.isLoading = true; // show loading icon
+      axios
+        .post('http://' + window.location.hostname + ':8001/api/jobs/run_preference_learning_optimizer/')
+        .then((response) => {
+          console.log(response.data);
+          this.isLoading = false;
+          this.fillTable();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
     deleteJobs() {
       const confirmed = window.confirm("Möchten Sie alle Jobs löschen?");
       if (!confirmed) {

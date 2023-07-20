@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .dbconnection import get_df_mit_MachStatus, get_df_ohne_MachStatus, get_df_mit_MachStatus_parameters, get_unscheduled_jobs_ohne_MachStatus
+from .dbconnection import get_scheduled_jobs_ohne_MachStatus, get_unscheduled_jobs_ohne_MachStatus
 from .models import Job
 from .serializer import JobsSerializer
 import pandas as pd
@@ -14,6 +14,8 @@ from collections import OrderedDict
 import os
 import sys
 from datetime import datetime, timedelta, time
+import pytz
+from django.utils import timezone
 date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 parent_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -32,6 +34,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils.dateparse import parse_datetime
 from decimal import Decimal
+from itertools import groupby
 
 pid = []
 holidays = []
@@ -47,7 +50,7 @@ def format_ind_time(date_str):
     if not match:
         raise ValueError('Invalid date string: no timezone offset found',date_str)
     tz_offset_str = match.group(1)
-    # convert timezone offset string to datetime.timedelta object
+    # convert timezone offset string to timedelta object
     tz_offset = timedelta(hours=int(tz_offset_str[1:3]), minutes=int(tz_offset_str[3:5]))
     # remove timezone information from string
     date_str = re.sub(r'GMT[\+\-]\d{4}\s+\(.+\)', '', date_str).strip()
@@ -123,166 +126,16 @@ class JobsViewSet(ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def uploadCSV(self, request):
-        csv_file = request.FILES.get('file')
-        if not csv_file:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        decoded_file = csv_file.read().decode('utf-8').splitlines()
-        reader = csv.DictReader(decoded_file)
-        jobs_data = list(reader)
-
-        for job_data in jobs_data:
-            job_instance = Job()
-            job_instance.Fefco_Teil = job_data.get('Fefco_Teil')
-            job_instance.ArtNr_Teil = job_data.get('ArtNr_Teil')
-            job_instance.ID_Druck = job_data.get('ID_Druck')
-            if str(job_data.get('Druckflaeche')) != 'NULL' and str(job_data.get('Druckflaeche')) != '':
-                job_instance.Druckflaeche = job_data.get('Druckflaeche')
-            job_instance.Bogen_Laenge_Brutto = job_data.get('Bogen_Laenge_Brutto')
-            job_instance.Bogen_Breite_Brutto = job_data.get('Bogen_Breite_Brutto')
-            job_instance.Maschine = job_data.get('Maschine')
-            job_instance.Start = parse_datetime(job_data.get('Start')) if job_data.get('Start') else None
-            job_instance.Ende = parse_datetime(job_data.get('Ende')) if job_data.get('Ende') else None
-            job_instance.Ruestzeit_Ist = job_data.get('Ruestzeit_Ist')
-            job_instance.Ruestzeit_Soll = job_data.get('Ruestzeit_Soll')
-            job_instance.Laufzeit_Ist = job_data.get('Laufzeit_Ist')
-            job_instance.Laufzeit_Soll = job_data.get('Laufzeit_Soll')
-            job_instance.Zeit_Ist = job_data.get('Zeit_Ist')
-            job_instance.Zeit_Soll = job_data.get('Zeit_Soll')
-            job_instance.Werkzeug_Nutzen = job_data.get('Werkzeug_Nutzen')
-            job_instance.Bestell_Nutzen = job_data.get('Bestell_Nutzen')
-            job_instance.Menge_Soll = job_data.get('Menge_Soll')
-            job_instance.Menge_Ist = job_data.get('Menge_Ist')
-            job_instance.Bemerkung = job_data.get('Bemerkung')
-            job_instance.LTermin = parse_datetime(job_data.get('LTermin')) if job_data.get('LTermin') else None
-            job_instance.KndNr = job_data.get('KndNr')
-            job_instance.Suchname = job_data.get('Suchname')
-            job_instance.AKNR = job_data.get('AKNR')
-            job_instance.TeilNr = job_data.get('TeilNr')
-            job_instance.SchrittNr = job_data.get('SchrittNr')
-            job_instance.Summe_Minuten = job_data.get('Summe_Minuten')
-            job_instance.ID_Maschstatus = job_data.get('ID_Maschstatus')
-            job_instance.Maschstatus = job_data.get('Maschstatus')
-
-            lieferdatum = job_data.get('Lieferdatum_Rohmaterial')
-            date_regex = r'\d{1,2}/\d{1,2}/\d{4}'  # dd.mm.yyyy pattern
-            if re.match(date_regex, str(lieferdatum)):
-                l_d = datetime.strptime(str(lieferdatum), "%m/%d/%Y").strftime("%Y-%m-%d 00:00:00.000")
-                print("l_d",l_d)
-                job_instance.Lieferdatum_Rohmaterial = parse_datetime(l_d)
-
-            job_instance.BE_Erledigt = job_data.get('BE_Erledigt')
-            job_instance.save()
-
-        message = "Upload successful"
-        return Response({"message": message}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['post'])
-    def deleteJobs(self, request):
-        Job.objects.all().delete() # delete all objects in Job model
-        message = "All jobs were deleted successfully"
-        return Response({"message": message}, status=status.HTTP_200_OK)
-
-    # runs genetic optimizer
-    @action(detail=False, methods=['post'])
-    def run_preference_learning_optimizer(self, request):
-        schedule = Job.objects.all()
-        serializer = JobsSerializer(schedule, many=True)
-        input_jobs = serializer.data
-        # Logic for PL optimizer here and invoke it in a separate process below so that it executes parallely
-        # p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
-        # p.start()
-        # pid.append(p.pid)
-        # p.join()
-        response = {'message': 'Preference Learning optimizer complete.'}
-        return Response(response)
-
-    @action(detail=False, methods=['post'])
-    def run_sjf(self, request):
-        # logic for SJF here, once SJF is done, schedules need to be written back into the Jobs db
-        return Response({'message': 'SJF completed.'})
-
-    @action(detail=False, methods=['post'])
-    def run_deadline_first(self, request):
-        # logic for deadline first here, once SJF is done, schedules need to be written back into the Jobs db
-        return Response({'message': 'Early Deadline First completed.'})
-
-    @action(detail=False, methods=['post'])
-    def stop_genetic_optimizer(self, request):
         try:
-            os.kill(pid[0], signal.SIGTERM)
-            delete_all_elements(pid)
-            return Response({'message': 'Stopping PL Optimizer completed.'})
-        except OSError:
-            pass
-        delete_all_elements(pid)
-        return Response({'message': 'Could not find running PL optimizer.'}) 
+            csv_file = request.FILES.get('file')
+            if not csv_file:
+                return Response({'error': 'Keine Datei bereitgestellt'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # updates a jobs
-    @action(detail=False, methods=['post'])
-    def setInd(self, request):
-        job_data = request.data.copy()
-        # print("job_data",job_data)
-        job_instance = Job.objects.get(Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'], AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'])
-        print("job_instance",job_instance)
-        if 'Start' in job_data and 'Ende' in job_data:
-            job_data['Start'] = job_data['Start']
-            job_data['Ende'] = job_data['Ende']
+            decoded_file = csv_file.read().decode('utf-8').splitlines()
+            reader = csv.DictReader(decoded_file)
+            jobs_data = list(reader)
 
-        serializer = self.get_serializer(job_instance, data=job_data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        message = "Der Auftrag wurde erfolgreich gespeichert"
-        return Response({"message": message}, status=status.HTTP_200_OK)
-
-    # gets jobs from Schulte DB
-    @action(detail=False, methods=['post'])
-    def getSchulteData(self, request):
-        info_start = request.POST.get('info_start')
-        info_end = request.POST.get('info_end')
-        formatted_start_date = datetime.strptime(format_ind_time(info_start), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m')
-        formatted_end_date = datetime.strptime(format_ind_time(info_end), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m')
-        df_mit_MachStatus_parameters = get_df_mit_MachStatus_parameters(formatted_start_date, formatted_end_date)
-        
-        # Convert the DataFrame to a list of dictionaries with string values
-        dict_list = df_mit_MachStatus_parameters.astype(str).to_dict(orient='records')
-        # Convert the list of dictionaries to an OrderedDict
-        ordered_dict_list = []
-        for item in dict_list:
-            ordered_dict = OrderedDict()
-            for key, value in item.items():
-                if key.endswith('_Date') or key.endswith('_Termin'):
-                    # Convert the date to ISO 8601 format
-                    value = pd.to_datetime(value).isoformat() + 'Z'
-                ordered_dict[key] = value
-            ordered_dict_list.append(ordered_dict)
-
-        json_obj = {'Schulte_data':ordered_dict_list}
-        return JsonResponse(json_obj, safe=False, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['post'])
-    def getSchulteDataUnscheduled(self, request):
-        info_start = request.POST.get('info_start')
-        info_end = request.POST.get('info_end')
-        print("info_start", type(info_start), "info_end", info_end)
-        # Check if info_start is undefined or empty
-        if info_start is None or info_start == '' or info_start == 'undefined':
-            yesterday = datetime.now().date() - timedelta(days=1)
-            formatted_start_date = yesterday.strftime('%Y-%d-%m')
-        else:
-            formatted_start_date = datetime.strptime(info_start, '%Y-%m-%d').date().strftime('%Y-%d-%m')
-        # Check if info_end is undefined or empty
-        if info_end is None or info_end == '' or info_start == 'undefined':
-            tomorrow = datetime.now().date() + timedelta(days=1)
-            formatted_end_date = tomorrow.strftime('%Y-%d-%m')
-        else:
-            formatted_end_date = datetime.strptime(info_end, '%Y-%m-%d').date().strftime('%Y-%d-%m')
-        from_db = True
-        if from_db:
-            Job.objects.all().delete()
-            df_unscheduled_jobs_ohne_MachStatus = get_unscheduled_jobs_ohne_MachStatus(formatted_start_date, formatted_end_date)
-            dict_list = df_unscheduled_jobs_ohne_MachStatus.astype(str).to_dict(orient='records')
-            for job_data in dict_list:
+            for job_data in jobs_data:
                 job_instance = Job()
                 job_instance.Fefco_Teil = job_data.get('Fefco_Teil')
                 job_instance.ArtNr_Teil = job_data.get('ArtNr_Teil')
@@ -305,7 +158,7 @@ class JobsViewSet(ModelViewSet):
                 job_instance.Menge_Soll = job_data.get('Menge_Soll')
                 job_instance.Menge_Ist = job_data.get('Menge_Ist')
                 job_instance.Bemerkung = job_data.get('Bemerkung')
-                # job_instance.LTermin = parse_datetime(job_data.get('LTermin')) if job_data.get('LTermin') else None
+                job_instance.LTermin = parse_datetime(job_data.get('LTermin')) if job_data.get('LTermin') else None
                 job_instance.KndNr = job_data.get('KndNr')
                 job_instance.Suchname = job_data.get('Suchname')
                 job_instance.AKNR = job_data.get('AKNR')
@@ -316,17 +169,360 @@ class JobsViewSet(ModelViewSet):
                 job_instance.Maschstatus = job_data.get('Maschstatus')
 
                 lieferdatum = job_data.get('Lieferdatum_Rohmaterial')
-                LTermin = job_data.get('LTermin')
-                date_regex = r'\d{4}-\d{2}-\d{2}'  # yyyy-mm-dd pattern
+                date_regex = r'\d{1,2}/\d{1,2}/\d{4}'  # dd.mm.yyyy pattern
                 if re.match(date_regex, str(lieferdatum)):
-                    l_d = datetime.strptime(str(lieferdatum), "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%SZ")
+                    l_d = datetime.strptime(str(lieferdatum), "%m/%d/%Y").strftime("%Y-%m-%d 00:00:00.000")
+                    print("l_d",l_d)
                     job_instance.Lieferdatum_Rohmaterial = parse_datetime(l_d)
-                if re.match(date_regex, str(LTermin)):
-                    l_d = datetime.strptime(str(LTermin), "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%SZ")
-                    job_instance.LTermin = parse_datetime(l_d)
 
                 job_instance.BE_Erledigt = job_data.get('BE_Erledigt')
                 job_instance.save()
 
-        message = "Der Auftrag wurde in DB erfolgreich gespeichert"
-        return Response({"message": message, "dict_list":dict_list}, status=status.HTTP_200_OK)
+            message = "Hochladen erfolgreich"
+            return Response({"message": message}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+                # If an exception occurs during the execution of the function, the code inside this block will handle it.
+                # You can customize the error message and status code to suit your needs.
+                error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+                return Response({"message": error_message})
+
+    @action(detail=False, methods=['post'])
+    def deleteJobs(self, request):
+        try:
+            Job.objects.all().delete() # delete all objects in Job model
+            message = "Alle Jobs wurden erfolgreich gelöscht"
+            return Response({"message": message}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            # If an exception occurs during the execution of the function, the code inside this block will handle it.
+            # You can customize the error message and status code to suit your needs.
+            error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+            return Response({"message": error_message})
+
+    # runs genetic optimizer
+    @action(detail=False, methods=['post'])
+    def run_preference_learning_optimizer(self, request):
+        schedule = Job.objects.all()
+        serializer = JobsSerializer(schedule, many=True)
+        input_jobs = serializer.data
+        # Logic for PL optimizer here and invoke it in a separate process below so that it executes parallely
+        # p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
+        # p.start()
+        # pid.append(p.pid)
+        # p.join()
+        response = {'message': 'Preference Learning-Optimierer abgeschlossen.'}
+        return Response(response)
+    
+    @action(detail=False, methods=['post'])
+    def run_sjf(self, request):
+        # Retrieve the jobs from the database
+        jobs = Job.objects.all()
+
+        # Sort the jobs based on 'Ruestzeit_Soll' (setup time)
+        sorted_jobs = sorted(jobs, key=lambda job: job.Ruestzeit_Soll)
+
+        # Initialize variables
+        machine_current_time = {}  # Dictionary to track current time for each machine
+        scheduled_jobs = []
+
+        # Get the current server time
+        server_time = datetime.now(pytz.timezone('Europe/Berlin'))
+
+        # Define the production time range
+        start_hour = 7
+        end_hour = 23
+
+        # Iterate through the sorted jobs and schedule them
+        for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
+            # Get the machine and its corresponding jobs
+            machine, jobs = machine_jobs
+
+            # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
+            sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
+
+            for job in sorted_machine_jobs:
+                # Check if the current job has the same 'Fefco_Teil' as the last scheduled job
+                if scheduled_jobs and job.Fefco_Teil == scheduled_jobs[-1].Fefco_Teil and job.Druckflaeche == scheduled_jobs[-1].Druckflaeche and job.Bogen_Laenge_Brutto == scheduled_jobs[-1].Bogen_Laenge_Brutto and job.Bogen_Breite_Brutto == scheduled_jobs[-1].Bogen_Breite_Brutto:
+                    # Skip setup time for subsequent jobs with the same 'Fefco_Teil'
+                    start_time = scheduled_jobs[-1].Ende + timedelta(minutes=1)
+                else:
+                    # Consider setup time for new jobs
+                    if machine in machine_current_time:
+                        current_time = machine_current_time[machine]
+                    else:
+                        # Adjust the current server time based on daylight saving time
+                        current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+
+                    # Move the job to the next working day if the start time exceeds the production hours
+                    while current_time.hour >= end_hour:
+                        current_time = current_time + timedelta(days=1)
+                        current_time = current_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+
+                        # Skip weekends
+                        while current_time.weekday() > 4:  # 5 and 6 correspond to Saturday and Sunday
+                            current_time = current_time + timedelta(days=1)
+
+                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
+
+                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                # Adjust the end time if it exceeds the production hours
+                while end_time.hour > end_hour:
+                    # Move the job to the next working day at 7 AM
+                    current_time = current_time + timedelta(days=1)
+                    current_time = current_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+
+                    # Skip weekends
+                    while current_time.weekday() > 4:  # 5 and 6 correspond to Saturday and Sunday
+                        current_time = current_time + timedelta(days=1)
+
+                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
+                    end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                job.Start = start_time
+                job.Ende = end_time
+                job.save()
+                scheduled_jobs.append(job)
+
+                # Update the current time for the machine
+                machine_current_time[machine] = end_time
+
+        # Return response
+        return Response({'message': 'SJF abgeschlossen.'})
+
+    @action(detail=False, methods=['post'])
+    def run_deadline_first(self, request):
+        # Retrieve the jobs from the database
+        jobs = Job.objects.all()
+
+        # Sort the jobs based on 'Ruestzeit_Soll' (setup time)
+        sorted_jobs = sorted(jobs, key=lambda job: job.Ruestzeit_Soll)
+
+        # Initialize variables
+        machine_current_time = {}  # Dictionary to track current time for each machine
+        scheduled_jobs = []
+
+        # Get the current server time
+        server_time = datetime.now(pytz.timezone('Europe/Berlin'))
+
+        # Iterate through the sorted jobs and schedule them
+        for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
+            # Get the machine and its corresponding jobs
+            machine, jobs = machine_jobs
+
+            # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
+            sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
+
+            for job in sorted_machine_jobs:
+                # Check if the current job has the same 'Fefco_Teil' as the last scheduled job
+                if scheduled_jobs and job.Fefco_Teil == scheduled_jobs[-1].Fefco_Teil:
+                    # Skip setup time for subsequent jobs with the same 'Fefco_Teil'
+                    start_time = scheduled_jobs[-1].Ende
+                else:
+                    # Consider setup time for new jobs
+                    if machine in machine_current_time:
+                        current_time = machine_current_time[machine]
+                    else:
+                        # Adjust the current server time based on daylight saving time
+                        if server_time.dst():
+                            current_time = server_time.replace(hour=7, minute=0, second=0, microsecond=0) #- timedelta(hours=2)
+                        else:
+                            current_time = server_time.replace(hour=7, minute=0, second=0, microsecond=0) #- timedelta(hours=1)
+                        machine_current_time[machine] = current_time
+
+                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
+
+                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                job.Start = start_time
+                job.Ende = end_time
+                job.save()
+                scheduled_jobs.append(job)
+
+                # Update the current time for the machine
+                machine_current_time[machine] = end_time
+
+        # Return response
+        return Response({'message': 'Deadline first completed.'})
+
+    @action(detail=False, methods=['post'])
+    def stop_genetic_optimizer(self, request):
+        try:
+            os.kill(pid[0], signal.SIGTERM)
+            delete_all_elements(pid)
+            return Response({'message': 'Stoppen des PL-Optimierers abgeschlossen.'})
+        except OSError:
+            pass
+        delete_all_elements(pid)
+        return Response({'message': 'Der laufende PL-Optimierer konnte nicht gefunden werden.'}) 
+
+    # updates a jobs
+    @action(detail=False, methods=['post'])
+    def setInd(self, request):
+        try:
+            job_data = request.data.copy()
+            print("job_data",job_data)
+            job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'], Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'])
+            print("job_instance",job_instance)
+            if 'Start' in job_data and 'Ende' in job_data:
+                job_data['Start'] = job_data['Start']
+                job_data['Ende'] = job_data['Ende']
+
+            serializer = self.get_serializer(job_instance, data=job_data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            message = "Der Auftrag wurde erfolgreich gespeichert"
+            return Response({"message": message}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+                # If an exception occurs during the execution of the function, the code inside this block will handle it.
+                # You can customize the error message and status code to suit your needs.
+                error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+                return Response({"message": error_message})
+
+    # gets jobs from Schulte DB
+    @action(detail=False, methods=['post'])
+    def getSchulteData(self, request):
+        try:
+            info_start = request.POST.get('info_start')
+            info_end = request.POST.get('info_end')
+            formatted_start_date = datetime.strptime(format_ind_time(info_start), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m')
+            formatted_end_date = datetime.strptime(format_ind_time(info_end), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%d-%m')
+            df_mit_MachStatus_parameters = get_scheduled_jobs_ohne_MachStatus(formatted_start_date, formatted_end_date)
+            
+            # Convert the DataFrame to a list of dictionaries with string values
+            dict_list = df_mit_MachStatus_parameters.astype(str).to_dict(orient='records')
+            # Convert the list of dictionaries to an OrderedDict
+            ordered_dict_list = []
+            for item in dict_list:
+                ordered_dict = OrderedDict()
+                for key, value in item.items():
+                    if key.endswith('_Date') or key.endswith('_Termin'):
+                        # Convert the date to ISO 8601 format
+                        value = pd.to_datetime(value).isoformat() + 'Z'
+                    ordered_dict[key] = value
+                ordered_dict_list.append(ordered_dict)
+
+            json_obj = {'Schulte_data':ordered_dict_list}
+            return JsonResponse(json_obj, safe=False, status=status.HTTP_200_OK)
+
+        except Exception as e:
+                # If an exception occurs during the execution of the function, the code inside this block will handle it.
+                # You can customize the error message and status code to suit your needs.
+                error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+                return Response({"message": error_message})
+
+    @action(detail=False, methods=['post'])
+    def getSchulteDataUnscheduled(self, request):
+        try:
+            info_start = request.POST.get('info_start')
+            info_end = request.POST.get('info_end')
+            print("info_start", type(info_start), "info_end", info_end)
+            # Check if info_start is undefined or empty
+            if info_start is None or info_start == '' or info_start == 'undefined':
+                yesterday = datetime.now().date() - timedelta(days=1)
+                formatted_start_date = yesterday.strftime('%Y-%d-%m')
+            else:
+                formatted_start_date = datetime.strptime(info_start, '%Y-%m-%d').date().strftime('%Y-%d-%m')
+            # Check if info_end is undefined or empty
+            if info_end is None or info_end == '' or info_start == 'undefined':
+                tomorrow = datetime.now().date() + timedelta(days=1)
+                formatted_end_date = tomorrow.strftime('%Y-%d-%m')
+            else:
+                formatted_end_date = datetime.strptime(info_end, '%Y-%m-%d').date().strftime('%Y-%d-%m')
+            from_db = True
+            if from_db:
+                Job.objects.all().delete()
+                df_unscheduled_jobs_ohne_MachStatus = get_unscheduled_jobs_ohne_MachStatus(formatted_start_date, formatted_end_date)
+                dict_list = df_unscheduled_jobs_ohne_MachStatus.astype(str).to_dict(orient='records')
+                for job_data in dict_list:
+                    job_instance = Job()
+                    job_instance.Fefco_Teil = job_data.get('Fefco_Teil')
+                    job_instance.ArtNr_Teil = job_data.get('ArtNr_Teil')
+                    job_instance.ID_Druck = job_data.get('ID_Druck')
+                    if str(job_data.get('Druckflaeche')) != 'NULL' and str(job_data.get('Druckflaeche')) != '':
+                        job_instance.Druckflaeche = job_data.get('Druckflaeche')
+                    job_instance.Bogen_Laenge_Brutto = job_data.get('Bogen_Laenge_Brutto')
+                    job_instance.Bogen_Breite_Brutto = job_data.get('Bogen_Breite_Brutto')
+                    job_instance.Maschine = job_data.get('Maschine')
+                    job_instance.Start = parse_datetime(job_data.get('Start')) if job_data.get('Start') else None
+                    job_instance.Ende = parse_datetime(job_data.get('Ende')) if job_data.get('Ende') else None
+                    job_instance.Ruestzeit_Ist = job_data.get('Ruestzeit_Ist')
+                    job_instance.Ruestzeit_Soll = job_data.get('Ruestzeit_Soll')
+                    job_instance.Laufzeit_Ist = job_data.get('Laufzeit_Ist')
+                    job_instance.Laufzeit_Soll = job_data.get('Laufzeit_Soll')
+                    job_instance.Zeit_Ist = job_data.get('Zeit_Ist')
+                    job_instance.Zeit_Soll = job_data.get('Zeit_Soll')
+                    job_instance.Werkzeug_Nutzen = job_data.get('Werkzeug_Nutzen')
+                    job_instance.Bestell_Nutzen = job_data.get('Bestell_Nutzen')
+                    job_instance.Menge_Soll = job_data.get('Menge_Soll')
+                    job_instance.Menge_Ist = job_data.get('Menge_Ist')
+                    job_instance.Bemerkung = job_data.get('Bemerkung')
+                    # job_instance.LTermin = parse_datetime(job_data.get('LTermin')) if job_data.get('LTermin') else None
+                    job_instance.KndNr = job_data.get('KndNr')
+                    job_instance.Suchname = job_data.get('Suchname')
+                    job_instance.AKNR = job_data.get('AKNR')
+                    job_instance.TeilNr = job_data.get('TeilNr')
+                    job_instance.SchrittNr = job_data.get('SchrittNr')
+                    job_instance.Summe_Minuten = job_data.get('Summe_Minuten')
+                    job_instance.ID_Maschstatus = job_data.get('ID_Maschstatus')
+                    job_instance.Maschstatus = job_data.get('Maschstatus')
+
+                    lieferdatum = job_data.get('Lieferdatum_Rohmaterial')
+                    LTermin = job_data.get('LTermin')
+                    date_regex = r'\d{4}-\d{2}-\d{2}'  # yyyy-mm-dd pattern
+                    if re.match(date_regex, str(lieferdatum)):
+                        l_d = datetime.strptime(str(lieferdatum), "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%SZ")
+                        job_instance.Lieferdatum_Rohmaterial = parse_datetime(l_d)
+                    if re.match(date_regex, str(LTermin)):
+                        l_d = datetime.strptime(str(LTermin), "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%SZ")
+                        job_instance.LTermin = parse_datetime(l_d)
+
+                    job_instance.BE_Erledigt = job_data.get('BE_Erledigt')
+                    job_instance.save()
+
+            message = "Der Auftrag wurde in DB erfolgreich gespeichert"
+            return Response({"message": message, "dict_list":dict_list}, status=status.HTTP_200_OK)
+  
+        except Exception as e:
+                # If an exception occurs during the execution of the function, the code inside this block will handle it.
+                # You can customize the error message and status code to suit your needs.
+                error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+                return Response({"message": error_message})
+
+    @action(detail=False, methods=['post'])
+    def savejobstoCSV(self, request):
+        try:
+            jobs = Job.objects.all()
+
+            # Generate a unique filename based on the current timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+            filename = f"data/saved_schedules/jobs_{timestamp}.csv"
+
+            # Create a CSV writer object
+            with open(filename, mode='w') as csv_file:
+                writer = csv.writer(csv_file)
+
+                # Write the header row
+                writer.writerow(['Fefco_Teil', 'ArtNr_Teil', 'ID_Druck', 'Druckflaeche', 'Bogen_Laenge_Brutto', 'Bogen_Breite_Brutto', 'Maschine',
+                    'Ruestzeit_Ist', 'Ruestzeit_Soll', 'Laufzeit_Ist', 'Laufzeit_Soll', 'Zeit_Ist', 'Zeit_Soll', 'Werkzeug_Nutzen',
+                    'Bestell_Nutzen', 'Menge_Soll', 'Menge_Ist', 'Bemerkung', 'LTermin', 'KndNr', 'Suchname', 'AKNR', 'TeilNr',
+                    'SchrittNr', 'Start', 'Ende', 'Summe_Minuten', 'ID_Maschstatus', 'Maschstatus', 'Lieferdatum_Rohmaterial',
+                    'BE_Erledigt'])
+
+                # Write the data rows
+                for job in jobs:
+                    writer.writerow([job.Fefco_Teil, job.ArtNr_Teil, job.ID_Druck, job.Druckflaeche, job.Bogen_Laenge_Brutto, job.Bogen_Breite_Brutto,
+                    job.Maschine, job.Ruestzeit_Ist, job.Ruestzeit_Soll, job.Laufzeit_Ist, job.Laufzeit_Soll, job.Zeit_Ist, job.Zeit_Soll,
+                    job.Werkzeug_Nutzen, job.Bestell_Nutzen, job.Menge_Soll, job.Menge_Ist, job.Bemerkung, job.LTermin, job.KndNr, job.Suchname,
+                    job.AKNR, job.TeilNr, job.SchrittNr, job.Start, job.Ende, job.Summe_Minuten, job.ID_Maschstatus, job.Maschstatus,
+                    job.Lieferdatum_Rohmaterial, job.BE_Erledigt])
+
+            message = "Alle Jobs wurden erfolgreich gespeichert"
+            return Response({"message": message}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # If an exception occurs during the execution of the function, the code inside this block will handle it.
+            # You can customize the error message and status code to suit your needs.
+            error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+            return Response({"message": error_message})

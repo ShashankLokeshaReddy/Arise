@@ -26,6 +26,8 @@
           <p>AKNR: {{ selectedEvent.extendedProps.AKNR }}</p>
           <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
           <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Bemerkung: {{ selectedEvent.extendedProps.Bemerkung }}</p>
+          <p>Suchname: {{ selectedEvent.extendedProps.Suchname }}</p>
           <p>Maschine: {{ selectedEvent.extendedProps.machines }}</p>
           <p>Start: {{ selectedEvent.extendedProps.Start }}</p>
           <p>Ende: {{ selectedEvent.extendedProps.Ende }}</p>
@@ -145,7 +147,7 @@ export default defineComponent({
                             console.log(response.data);
                             this.isLoading = false;
                             window.alert(response.data.message);
-                            this.fillTable();
+                            //this.fillTable();
                             })
                             .catch((error) => {
                                 console.log(error);
@@ -200,7 +202,7 @@ export default defineComponent({
                         const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
                         const jobs_data = {
-                            AKNR: info.event.title,
+                            AKNR: info.event.extendedProps.AKNR,
                             TeilNr: info.event.extendedProps.TeilNr,
                             SchrittNr: info.event.extendedProps.SchrittNr,
                             Fefco_Teil: info.event.extendedProps.Fefco_Teil,
@@ -248,7 +250,7 @@ export default defineComponent({
                         const end_s = new Date(info.event.end);
                         const endISOString = end_s.toISOString().substring(0, 19) + "Z";
                         const jobs_data = {
-                            AKNR: info.event.title,
+                            AKNR: info.event.extendedProps.AKNR,
                             TeilNr: info.event.extendedProps.TeilNr,
                             SchrittNr: info.event.extendedProps.SchrittNr,
                             Fefco_Teil: info.event.extendedProps.Fefco_Teil,
@@ -318,7 +320,7 @@ export default defineComponent({
                         }
                         var temp_event = {
                             "resourceId": output[i]["Maschine"],
-                            "title": output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                            "title": output[i]["AKNR"] + "-" + output[i]["Suchname"],
                             "start": output[i]["Start"],
                             "end": output[i]["Ende"],
                             "eventColor": "green",
@@ -329,6 +331,8 @@ export default defineComponent({
                                 "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
+                                "Bemerkung": output[i]["Bemerkung"],
+                                "Suchname": output[i]["Suchname"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
                                 "ArtNr_Teil": output[i]["ArtNr_Teil"],
                                 "Start": output[i]["Start"],
@@ -412,7 +416,7 @@ export default defineComponent({
         for (var i = 0; i < output.length; ++i) {
             var temp_event = {
                 "resourceId":output[i]["Maschine"],
-                "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                "title":output[i]["AKNR"] + "-" + output[i]["Suchname"],
                 "start":output[i]["Start"],
                 "end":output[i]["Ende"],
                 "eventColor":"blue",
@@ -423,6 +427,8 @@ export default defineComponent({
                     "AKNR": output[i]["AKNR"],
                     "TeilNr": output[i]["TeilNr"],
                     "SchrittNr": output[i]["SchrittNr"],
+                    "Bemerkung": output[i]["Bemerkung"],
+                    "Suchname": output[i]["Suchname"],
                     "Fefco_Teil": output[i]["Fefco_Teil"],
                     "ArtNr_Teil": output[i]["ArtNr_Teil"],
                     "Start": output[i]["Start"],

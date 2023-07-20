@@ -26,6 +26,8 @@
           <p>AKNR: {{ selectedEvent.extendedProps.AKNR }}</p>
           <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
           <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Bemerkung: {{ selectedEvent.extendedProps.Bemerkung }}</p>
+          <p>Suchname: {{ selectedEvent.extendedProps.Suchname }}</p>
           <p>Maschine: {{ selectedEvent.extendedProps.machines }}</p>
           <p>Start: {{ selectedEvent.extendedProps.Start }}</p>
           <p>Ende: {{ selectedEvent.extendedProps.Ende }}</p>
@@ -140,7 +142,7 @@ export default defineComponent({
                             console.log(response.data);
                             this.isLoading = false;
                             window.alert(response.data.message);
-                            this.fillTable();
+                            //this.fillTable();
                             })
                             .catch((error) => {
                                 console.log(error);
@@ -203,7 +205,7 @@ export default defineComponent({
                     }
                     console.log(view_start,view_end);
                     console.log(info.event.title,info.event.start,info.event.end);
-                    console.log(bck_event.title,bck_event.start,bck_event.end);
+                    //console.log(bck_event.title,bck_event.start,bck_event.end);
                     if((info.event.end > bck_event.end) && (info.event.classNames[0] === "fwd")){
                         var numerator = bck_event.end - override_start;
                         var denominator = override_end - override_start;
@@ -248,7 +250,7 @@ export default defineComponent({
                     }
                     console.log(view_start,view_end);
                     console.log(info.event.title,info.event.start,info.event.end);
-                    console.log(bck_event.title,bck_event.start,bck_event.end);
+                    //console.log(bck_event.title,bck_event.start,bck_event.end);
                     if((info.event.end > bck_event.end) && (info.event.classNames[0] === "fwd_db")){
                         var numerator = bck_event.end - override_start;
                         var denominator = override_end - override_start;
@@ -334,7 +336,7 @@ export default defineComponent({
                     const end_s = new Date(info.event.end);
                     const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
+                    const jobs_data = {AKNR: bck_event.extendedProps.AKNR, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
                     const formData = new FormData();
                     for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
@@ -423,7 +425,7 @@ export default defineComponent({
                     const end_s = new Date(info.event.end);
                     const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {AKNR: bck_event.title, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
+                    const jobs_data = {AKNR: bck_event.extendedProps.AKNR, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
                     const formData = new FormData();
                     for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
@@ -478,8 +480,8 @@ export default defineComponent({
                             output[i]["Ende"] = output[i]["LTermin"]
                         }
                         var bck_event = {
-                            "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
-                            "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                            "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
+                            "title":output[i]["AKNR"] + "-" + output[i]["Suchname"],
                             "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
                             "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                             "eventColor":"grey",
@@ -490,6 +492,8 @@ export default defineComponent({
                                 "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
+                                "Bemerkung": output[i]["Bemerkung"],
+                                "Suchname": output[i]["Suchname"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
                                 "ArtNr_Teil": output[i]["ArtNr_Teil"],
                                 "Start": output[i]["Start"],
@@ -499,7 +503,7 @@ export default defineComponent({
                             }
                         };
                         var temp_event = {
-                            "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                            "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
                             "title":output[i]["Maschine"],
                             "start":output[i]["Start"],
                             "end":output[i]["Ende"],
@@ -511,6 +515,8 @@ export default defineComponent({
                                 "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
+                                "Bemerkung": output[i]["Bemerkung"],
+                                "Suchname": output[i]["Suchname"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
                                 "ArtNr_Teil": output[i]["ArtNr_Teil"],
                                 "Start": output[i]["Start"],
@@ -528,8 +534,8 @@ export default defineComponent({
 
                     for (var i = 0; i < output.length; ++i) {
                         var temp_res = {
-                        "id": output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
-                        "title": output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"]
+                        "id": output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
+                        "title": output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"]
                         };
                         resources_var_db.push(temp_res);
                     }
@@ -595,8 +601,8 @@ export default defineComponent({
             var events_var = []
             for (var i = 0; i < output.length; ++i) {
                 var bck_event = {
-                    "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
-                    "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                    "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
+                    "title":output[i]["AKNR"] + "-" + output[i]["Suchname"],
                     "start":new Date(new Date(output[i]["Lieferdatum_Rohmaterial"]).getTime() + (1 * 24 * 60 * 60 * 1000)),
                     "end": new Date(new Date(output[i]["LTermin"]).getTime() - (2 * 24 * 60 * 60 * 1000)),
                     "eventColor":"orange",
@@ -607,6 +613,8 @@ export default defineComponent({
                         "AKNR": output[i]["AKNR"],
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
+                        "Bemerkung": output[i]["Bemerkung"],
+                        "Suchname": output[i]["Suchname"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
                         "ArtNr_Teil": output[i]["ArtNr_Teil"],
                         "Start": output[i]["Start"],
@@ -616,7 +624,7 @@ export default defineComponent({
                     }                 
                 };
                 var temp_event = {
-                    "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
+                    "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
                     "title":output[i]["Maschine"],
                     "start":output[i]["Start"],
                     "end":output[i]["Ende"],
@@ -628,6 +636,8 @@ export default defineComponent({
                         "AKNR": output[i]["AKNR"],
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
+                        "Bemerkung": output[i]["Bemerkung"],
+                        "Suchname": output[i]["Suchname"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
                         "ArtNr_Teil": output[i]["ArtNr_Teil"],
                         "Start": output[i]["Start"],
@@ -644,8 +654,8 @@ export default defineComponent({
             var resources_var: { id: string; title: string }[] = [];
             for (var i = 0; i < output.length; ++i) {
                 var temp_res = {
-                    "id":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"],
-                    "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"] + "-" + output[i]["SchrittNr"]
+                    "id":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
+                    "title":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"]
                 };
                 resources_var.push(temp_res);
             }
