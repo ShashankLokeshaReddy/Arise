@@ -15,7 +15,7 @@
     </div>
 
     <!-- Event details popup -->
-    <v-dialog v-model="showEventPopup" max-width="500px">
+    <v-dialog v-model="showEventPopup" max-width="700px">
       <v-card class="event-popup">
         <v-card-title>
           <span class="headline">Jobdetails</span>
