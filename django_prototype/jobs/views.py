@@ -562,7 +562,7 @@ class JobsViewSet(ModelViewSet):
 
             # Generate a unique filename based on the current timestamp
             timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            filename = f"data/saved_schedules/jobs_{timestamp}.csv"
+            filename = f"saved_schedules/jobs_{timestamp}.csv"
 
             # Create a CSV writer object
             with open(filename, mode='w') as csv_file:
