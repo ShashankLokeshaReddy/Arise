@@ -5,6 +5,7 @@ from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.utils.timezone import is_aware, make_aware
 
 from .dbconnection import get_scheduled_jobs_ohne_MachStatus, get_unscheduled_jobs_ohne_MachStatus
 from .models import Job
@@ -39,13 +40,20 @@ from itertools import groupby
 pid = []
 holidays = []
 
-def is_working_hour(dt):
-    # Define the start and end working hours (7 AM to 11 PM)
+def is_working_day(time):
+    return time.weekday() < 5  # 0 to 4 correspond to Monday to Friday
+
+def is_working_hour(time):
     start_hour = 7
     end_hour = 23
+    return start_hour <= time.hour < end_hour
 
-    # Check if the given time falls within the working hours
-    return start_hour <= dt.hour < end_hour
+def get_next_working_day(current_time):
+    while current_time:
+        current_time += timedelta(days=1)
+        current_time = current_time.replace(hour=7, minute=0, second=0, microsecond=0)
+        if is_working_day(current_time):
+            return current_time
 
 def delete_all_elements(my_list):
     for i in range(len(my_list) - 1, -1, -1):
@@ -227,12 +235,11 @@ class JobsViewSet(ModelViewSet):
         # Retrieve the jobs from the database
         jobs = Job.objects.all()
 
-        # Sort the jobs based on 'Laufzeit_Soll' (running time)
+        # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
         sorted_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
 
         # Initialize variables
         machine_current_time = {}  # Dictionary to track current time for each machine
-        scheduled_jobs = []
 
         # Get the current server time in the specified timezone
         timezone = pytz.timezone('Europe/Berlin')
@@ -241,6 +248,10 @@ class JobsViewSet(ModelViewSet):
         # Define the production time range
         start_hour = 7
         end_hour = 23
+
+        # Check if today is a working day
+        if not is_working_day(server_time):
+            server_time = get_next_working_day(server_time)
 
         # Iterate through the sorted jobs and schedule them
         for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
@@ -251,33 +262,26 @@ class JobsViewSet(ModelViewSet):
             sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
 
             for job in sorted_machine_jobs:
-                # Check if the current job has the same 'Fefco_Teil' as the last scheduled job
-                if scheduled_jobs and job.Fefco_Teil == scheduled_jobs[-1].Fefco_Teil and job.Druckflaeche == scheduled_jobs[-1].Druckflaeche and job.Bogen_Laenge_Brutto == scheduled_jobs[-1].Bogen_Laenge_Brutto and job.Bogen_Breite_Brutto == scheduled_jobs[-1].Bogen_Breite_Brutto:
-                    # Skip setup time for subsequent jobs with the same 'Fefco_Teil'
-                    start_time = scheduled_jobs[-1].Ende + timedelta(minutes=1)
+                # Consider setup time for new jobs
+                if machine in machine_current_time:
+                    current_time = machine_current_time[machine]
                 else:
-                    # Consider setup time for new jobs
-                    if machine in machine_current_time:
-                        current_time = machine_current_time[machine]
-                    else:
-                        # Adjust the current server time based on daylight saving time
-                        current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                    # Adjust the current server time based on daylight saving time
+                    if not is_aware(server_time):
+                        server_time = make_aware(server_time, timezone)
+                    current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
 
-                    # Move the job to the next working day if the start time exceeds the production hours
+                # Move to the next working day if the current time is not within working hours
+                while current_time and not is_working_hour(current_time):
+                    current_time = get_next_working_day(current_time)
+
+                # If there is no valid working time for scheduling, move this job to the next production day
+                if not current_time:
+                    current_time = get_next_working_day(server_time)
                     while current_time and not is_working_hour(current_time):
-                        current_time += timedelta(days=1)
-                        current_time = current_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                        current_time = get_next_working_day(current_time)
 
-                        # Skip weekends (Saturday and Sunday)
-                        while current_time and current_time.weekday() > 4:  # 5 and 6 correspond to Saturday and Sunday
-                            current_time += timedelta(days=1)
-
-                    if not current_time:
-                        # If there is no valid working time for scheduling, skip this job
-                        continue
-
-                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
-
+                start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
                 end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
 
                 # Check if the job.end time exceeds the working hours (11 PM)
@@ -296,26 +300,36 @@ class JobsViewSet(ModelViewSet):
                 job.Ende = end_time
                 job.save()
 
-                # Add the job to the list of scheduled jobs
-                scheduled_jobs.append(job)
-
                 # Update the current time for the machine
                 machine_current_time[machine] = end_time
 
+        # Handle unscheduled jobs (jobs without valid schedules)
+        unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
+        for job in unscheduled_jobs:
+            # Assign start and end times without checking for constraints
+            start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+            start_time += timedelta(days=1)  # Move to the next production day
+            start_time += timedelta(minutes=int(job.Ruestzeit_Soll))
+            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+            # Save the job's start and end times
+            job.Start = start_time
+            job.Ende = end_time
+            job.save()
+
         # Return response
         return Response({'message': 'SJF abgeschlossen.'})
-    
+
     @action(detail=False, methods=['post'])
     def run_deadline_first(self, request):
         # Retrieve the jobs from the database
         jobs = Job.objects.all()
 
-        # Sort the jobs based on 'LTermin' (deadline)
+        # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
         sorted_jobs = sorted(jobs, key=lambda job: job.LTermin)
 
         # Initialize variables
         machine_current_time = {}  # Dictionary to track current time for each machine
-        scheduled_jobs = []
 
         # Get the current server time in the specified timezone
         timezone = pytz.timezone('Europe/Berlin')
@@ -324,6 +338,10 @@ class JobsViewSet(ModelViewSet):
         # Define the production time range
         start_hour = 7
         end_hour = 23
+
+        # Check if today is a working day
+        if not is_working_day(server_time):
+            server_time = get_next_working_day(server_time)
 
         # Iterate through the sorted jobs and schedule them
         for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
@@ -334,33 +352,26 @@ class JobsViewSet(ModelViewSet):
             sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
 
             for job in sorted_machine_jobs:
-                # Check if the current job has the same 'Fefco_Teil' as the last scheduled job
-                if scheduled_jobs and job.Fefco_Teil == scheduled_jobs[-1].Fefco_Teil and job.Druckflaeche == scheduled_jobs[-1].Druckflaeche and job.Bogen_Laenge_Brutto == scheduled_jobs[-1].Bogen_Laenge_Brutto and job.Bogen_Breite_Brutto == scheduled_jobs[-1].Bogen_Breite_Brutto:
-                    # Skip setup time for subsequent jobs with the same 'Fefco_Teil'
-                    start_time = scheduled_jobs[-1].Ende + timedelta(minutes=1)
+                # Consider setup time for new jobs
+                if machine in machine_current_time:
+                    current_time = machine_current_time[machine]
                 else:
-                    # Consider setup time for new jobs
-                    if machine in machine_current_time:
-                        current_time = machine_current_time[machine]
-                    else:
-                        # Adjust the current server time based on daylight saving time
-                        current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                    # Adjust the current server time based on daylight saving time
+                    if not is_aware(server_time):
+                        server_time = make_aware(server_time, timezone)
+                    current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
 
-                    # Move the job to the next working day if the start time exceeds the production hours
+                # Move to the next working day if the current time is not within working hours
+                while current_time and not is_working_hour(current_time):
+                    current_time = get_next_working_day(current_time)
+
+                # If there is no valid working time for scheduling, move this job to the next production day
+                if not current_time:
+                    current_time = get_next_working_day(server_time)
                     while current_time and not is_working_hour(current_time):
-                        current_time += timedelta(days=1)
-                        current_time = current_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                        current_time = get_next_working_day(current_time)
 
-                        # Skip weekends (Saturday and Sunday)
-                        while current_time and current_time.weekday() > 4:  # 5 and 6 correspond to Saturday and Sunday
-                            current_time += timedelta(days=1)
-
-                    if not current_time:
-                        # If there is no valid working time for scheduling, skip this job
-                        continue
-
-                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
-
+                start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
                 end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
 
                 # Check if the job.end time exceeds the working hours (11 PM)
@@ -379,11 +390,22 @@ class JobsViewSet(ModelViewSet):
                 job.Ende = end_time
                 job.save()
 
-                # Add the job to the list of scheduled jobs
-                scheduled_jobs.append(job)
-
                 # Update the current time for the machine
                 machine_current_time[machine] = end_time
+
+        # Handle unscheduled jobs (jobs without valid schedules)
+        unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
+        for job in unscheduled_jobs:
+            # Assign start and end times without checking for constraints
+            start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+            start_time += timedelta(days=1)  # Move to the next production day
+            start_time += timedelta(minutes=int(job.Ruestzeit_Soll))
+            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+            # Save the job's start and end times
+            job.Start = start_time
+            job.Ende = end_time
+            job.save()
 
         # Return response
         return Response({'message': 'Deadline first abgeschlossen.'})

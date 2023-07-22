@@ -26,6 +26,7 @@
           <p>AKNR: {{ selectedEvent.extendedProps.AKNR }}</p>
           <p>TeilNr: {{ selectedEvent.extendedProps.TeilNr }}</p>
           <p>SchrittNr: {{ selectedEvent.extendedProps.SchrittNr }}</p>
+          <p>Ruestzeit Soll: {{ selectedEvent.extendedProps.Ruestzeit_Soll }}</p>
           <p>Bemerkung: {{ selectedEvent.extendedProps.Bemerkung }}</p>
           <p>Suchname: {{ selectedEvent.extendedProps.Suchname }}</p>
           <p>Maschine: {{ selectedEvent.extendedProps.machines }}</p>
@@ -336,7 +337,7 @@ export default defineComponent({
                     const end_s = new Date(info.event.end);
                     const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {AKNR: bck_event.extendedProps.AKNR, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
+                    const jobs_data = {AKNR: bck_event.extendedProps.AKNR, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Ruestzeit_Soll: info.event.extendedProps.Ruestzeit_Soll, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
                     const formData = new FormData();
                     for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
@@ -425,7 +426,7 @@ export default defineComponent({
                     const end_s = new Date(info.event.end);
                     const endISOString = end_s.toISOString().substring(0, 19) + "Z";
 
-                    const jobs_data = {AKNR: bck_event.extendedProps.AKNR, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
+                    const jobs_data = {AKNR: bck_event.extendedProps.AKNR, Start: startISOString, Ende: endISOString, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Ruestzeit_Soll: info.event.extendedProps.Ruestzeit_Soll, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
                     const formData = new FormData();
                     for (let key in jobs_data) {
                     formData.append(key, jobs_data[key]);
@@ -492,6 +493,7 @@ export default defineComponent({
                                 "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
+                                "Ruestzeit_Soll": output[i]["Ruestzeit_Soll"],
                                 "Bemerkung": output[i]["Bemerkung"],
                                 "Suchname": output[i]["Suchname"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -515,6 +517,7 @@ export default defineComponent({
                                 "AKNR": output[i]["AKNR"],
                                 "TeilNr": output[i]["TeilNr"],
                                 "SchrittNr": output[i]["SchrittNr"],
+                                "Ruestzeit_Soll": output[i]["Ruestzeit_Soll"],
                                 "Bemerkung": output[i]["Bemerkung"],
                                 "Suchname": output[i]["Suchname"],
                                 "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -613,6 +616,7 @@ export default defineComponent({
                         "AKNR": output[i]["AKNR"],
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
+                        "Ruestzeit_Soll": output[i]["Ruestzeit_Soll"],
                         "Bemerkung": output[i]["Bemerkung"],
                         "Suchname": output[i]["Suchname"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
@@ -636,6 +640,7 @@ export default defineComponent({
                         "AKNR": output[i]["AKNR"],
                         "TeilNr": output[i]["TeilNr"],
                         "SchrittNr": output[i]["SchrittNr"],
+                        "Ruestzeit_Soll": output[i]["Ruestzeit_Soll"],
                         "Bemerkung": output[i]["Bemerkung"],
                         "Suchname": output[i]["Suchname"],
                         "Fefco_Teil": output[i]["Fefco_Teil"],
