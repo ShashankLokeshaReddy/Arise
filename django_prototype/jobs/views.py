@@ -14,7 +14,7 @@ import pandas as pd
 from collections import OrderedDict
 import os
 import sys
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, date
 import pytz
 from django.utils import timezone
 date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -22,8 +22,9 @@ date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 parent_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir_path)
 
-scripts_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','scripts'))
+scripts_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..','..','scripts/PL_Optimizer/PL_Optimizer'))
 sys.path.append(scripts_dir_path)
+from Main_Optimization import Optimization
 
 import signal
 import psutil
@@ -86,6 +87,45 @@ def is_valid_datetime(datetime_str):
         return True
     except ValueError:
         return False
+
+def run_PL_optimizer_in_diff_process(self, request, input_jobs):
+    df = pd.DataFrame(input_jobs)
+    # change data types
+    df['Start'] = pd.to_datetime(df['Start'])
+    df['Ende'] = pd.to_datetime(df['Ende'])
+    df['LTermin'] = pd.to_datetime(df['LTermin'])
+    df['Lieferdatum_Rohmaterial'] = pd.to_datetime(df['Lieferdatum_Rohmaterial'])
+    df['Ruestzeit_Soll'] = df['Ruestzeit_Soll'].astype(int)
+    df['Laufzeit_Soll'] = df['Laufzeit_Soll'].astype(int)
+    df['Zeit_Soll'] = df['Zeit_Soll'].astype(int)
+    # build and rename columns
+    df['Release_Date'] = df['Lieferdatum_Rohmaterial'] + pd.Timedelta(days=1)
+    df = df.rename(columns = {'LTermin': 'Due_Date', 'Fefco_Teil': 'FEFCO_Teil'}) # rename, because the new Schulte data has different column names
+
+    # divide data by machines: Each machine gets a unique df
+    data = {}
+
+    for machine in df.Maschine.unique():
+        data[machine] = df[df.Maschine == machine].sort_values('Start').reset_index(drop=True)
+        # machine = 'SL12'
+        # production_start = pd.Timestamp(date(2017, 3, 10)) # datetime.date(2015, 1, 14)
+        # get data which is released before production start and has a due data not before one day after production start
+        df_test = data[machine].reset_index(drop=True)
+        df_test.head()
+        schedule, meta_params  = Optimization(df_test)
+        schedule = schedule.rename(columns = {'Due_Date': 'LTermin', 'FEFCO_Teil': 'Fefco_Teil'})
+        schedule['Start'] = schedule['Start'].astype(str)
+        schedule['Ende'] = schedule['Ende'].astype(str)
+
+        # Convert the schedule DataFrame to a list of dictionaries
+        schedule_list = schedule.to_dict(orient='records')
+
+        # Update the database objects with the optimized schedule
+        for job_data in schedule_list:
+            job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'], Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'])
+            job_instance.Start = parse_datetime(job_data.get('Start')) if job_data.get('Start') else None
+            job_instance.Ende = parse_datetime(job_data.get('Ende')) if job_data.get('Ende') else None
+            job_instance.save()
 
 class JobsViewSet(ModelViewSet):
     queryset = Job.objects.all()
@@ -219,14 +259,13 @@ class JobsViewSet(ModelViewSet):
     # runs genetic optimizer
     @action(detail=False, methods=['post'])
     def run_preference_learning_optimizer(self, request):
-        schedule = Job.objects.all()
-        serializer = JobsSerializer(schedule, many=True)
+        jobs = Job.objects.all()
+        serializer = JobsSerializer(jobs, many=True)
         input_jobs = serializer.data
-        # Logic for PL optimizer here and invoke it in a separate process below so that it executes parallely
-        # p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
-        # p.start()
-        # pid.append(p.pid)
-        # p.join()
+        p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
+        p.start()
+        pid.append(p.pid)
+        p.join()
         response = {'message': 'Preference Learning-Optimierer abgeschlossen.'}
         return Response(response)
     
@@ -411,7 +450,7 @@ class JobsViewSet(ModelViewSet):
         return Response({'message': 'Deadline first abgeschlossen.'})
 
     @action(detail=False, methods=['post'])
-    def stop_genetic_optimizer(self, request):
+    def stop_PL_optimizer(self, request):
         try:
             os.kill(pid[0], signal.SIGTERM)
             delete_all_elements(pid)
