@@ -122,9 +122,10 @@ def run_PL_optimizer_in_diff_process(self, request, input_jobs):
 
         # Update the database objects with the optimized schedule
         for job_data in schedule_list:
+            print(job_data.get('Start'), job_data.get('Ende'))
             job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'], Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'])
-            job_instance.Start = parse_datetime(job_data.get('Start')) if job_data.get('Start') else None
-            job_instance.Ende = parse_datetime(job_data.get('Ende')) if job_data.get('Ende') else None
+            job_instance.Start = pd.to_datetime(job_data.get('Start')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Start') else None
+            job_instance.Ende = pd.to_datetime(job_data.get('Ende')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Ende') else None
             job_instance.save()
 
 class JobsViewSet(ModelViewSet):
@@ -340,6 +341,7 @@ class JobsViewSet(ModelViewSet):
                         if start_time.hour < 7:
                             # Adjust the job.start time to the first working hour (7 AM)
                             start_time = start_time.replace(hour=7, minute=0)
+                            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
 
                     # Save the job's start and end times
                     job.Start = start_time
@@ -437,6 +439,7 @@ class JobsViewSet(ModelViewSet):
                         if start_time.hour < 7:
                             # Adjust the job.start time to the first working hour (7 AM)
                             start_time = start_time.replace(hour=7, minute=0)
+                            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
 
                     # Save the job's start and end times
                     job.Start = start_time
