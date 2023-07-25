@@ -122,7 +122,6 @@ def run_PL_optimizer_in_diff_process(self, request, input_jobs):
 
         # Update the database objects with the optimized schedule
         for job_data in schedule_list:
-            print(job_data.get('Start'), job_data.get('Ende'))
             job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'], Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'])
             job_instance.Start = pd.to_datetime(job_data.get('Start')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Start') else None
             job_instance.Ende = pd.to_datetime(job_data.get('Ende')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Ende') else None
