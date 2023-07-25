@@ -10,7 +10,7 @@ Status of Main:
 
 Open the console and navigate into the root folder of the project and (depending on your system) type `docker compose up` or `docker-compose up`. To shutdown, open a separate terminal tab or window and type `docker compose down` or `docker-compose down` respectively. This should create 3 images "some_folder_name-web" for the django_prototype, node for the frontend and postgres for the database. The containers should also get started and they should typically look like below indicating that django backend server and the frontend can now be started through their respective ports in the localhost.
 
-![Container](attachments\container.PNG)
+![Container](attachments/container.png)
 
 ## Admin console of Django Server and Super User Creation
 Step 1: Open the terminal of the "web-1" container and type "cd django_prototype" cmd.
