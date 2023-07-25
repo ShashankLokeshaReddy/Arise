@@ -259,195 +259,215 @@ class JobsViewSet(ModelViewSet):
     # runs genetic optimizer
     @action(detail=False, methods=['post'])
     def run_preference_learning_optimizer(self, request):
-        jobs = Job.objects.all()
-        serializer = JobsSerializer(jobs, many=True)
-        input_jobs = serializer.data
-        p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
-        p.start()
-        pid.append(p.pid)
-        p.join()
-        response = {'message': 'Preference Learning-Optimierer abgeschlossen.'}
-        return Response(response)
+        try:
+            jobs = Job.objects.all()
+            serializer = JobsSerializer(jobs, many=True)
+            input_jobs = serializer.data
+            p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
+            p.start()
+            pid.append(p.pid)
+            p.join()
+            response = {'message': 'Preference Learning-Optimierer abgeschlossen.'}
+            return Response(response)
+        except Exception as e:
+            # If an exception occurs during the execution of the function, the code inside this block will handle it.
+            # You can customize the error message and status code to suit your needs.
+            error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+            return Response({"message": error_message})
     
     @action(detail=False, methods=['post'])
     def run_sjf(self, request):
-        # Retrieve the jobs from the database
-        jobs = Job.objects.all()
+        try:
+            # Retrieve the jobs from the database
+            jobs = Job.objects.all()
 
-        # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
-        sorted_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
+            # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
+            sorted_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
 
-        # Initialize variables
-        machine_current_time = {}  # Dictionary to track current time for each machine
+            # Initialize variables
+            machine_current_time = {}  # Dictionary to track current time for each machine
 
-        # Get the current server time in the specified timezone
-        timezone = pytz.timezone('Europe/Berlin')
-        server_time = datetime.now(timezone)
+            # Get the current server time in the specified timezone
+            timezone = pytz.timezone('Europe/Berlin')
+            server_time = datetime.now(timezone)
 
-        # Define the production time range
-        start_hour = 7
-        end_hour = 23
+            # Define the production time range
+            start_hour = 7
+            end_hour = 23
 
-        # Check if today is a working day
-        if not is_working_day(server_time):
-            server_time = get_next_working_day(server_time)
+            # Check if today is a working day
+            if not is_working_day(server_time):
+                server_time = get_next_working_day(server_time)
 
-        # Iterate through the sorted jobs and schedule them
-        for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
-            # Get the machine and its corresponding jobs
-            machine, jobs = machine_jobs
+            # Iterate through the sorted jobs and schedule them
+            for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
+                # Get the machine and its corresponding jobs
+                machine, jobs = machine_jobs
 
-            # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
-            sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
+                # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
+                sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
 
-            for job in sorted_machine_jobs:
-                # Consider setup time for new jobs
-                if machine in machine_current_time:
-                    current_time = machine_current_time[machine]
-                else:
-                    # Adjust the current server time based on daylight saving time
-                    if not is_aware(server_time):
-                        server_time = make_aware(server_time, timezone)
-                    current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                for job in sorted_machine_jobs:
+                    # Consider setup time for new jobs
+                    if machine in machine_current_time:
+                        current_time = machine_current_time[machine]
+                    else:
+                        # Adjust the current server time based on daylight saving time
+                        if not is_aware(server_time):
+                            server_time = make_aware(server_time, timezone)
+                        current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
 
-                # Move to the next working day if the current time is not within working hours
-                while current_time and not is_working_hour(current_time):
-                    current_time = get_next_working_day(current_time)
-
-                # If there is no valid working time for scheduling, move this job to the next production day
-                if not current_time:
-                    current_time = get_next_working_day(server_time)
+                    # Move to the next working day if the current time is not within working hours
                     while current_time and not is_working_hour(current_time):
                         current_time = get_next_working_day(current_time)
 
-                start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
-                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+                    # If there is no valid working time for scheduling, move this job to the next production day
+                    if not current_time:
+                        current_time = get_next_working_day(server_time)
+                        while current_time and not is_working_hour(current_time):
+                            current_time = get_next_working_day(current_time)
 
-                # Check if the job.end time exceeds the working hours (11 PM)
-                if end_time.hour >= 23:
-                    # Unassign start and end times for this job to reschedule it the next morning at 7 AM
-                    start_time = None
-                    end_time = None
-                else:
-                    # Check if the job.start time is earlier than the working hours (7 AM)
-                    if start_time.hour < 7:
-                        # Adjust the job.start time to the first working hour (7 AM)
-                        start_time = start_time.replace(hour=7, minute=0)
+                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
+                    end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                    # Check if the job.end time exceeds the working hours (11 PM)
+                    if end_time.hour >= 23:
+                        # Unassign start and end times for this job to reschedule it the next morning at 7 AM
+                        start_time = None
+                        end_time = None
+                    else:
+                        # Check if the job.start time is earlier than the working hours (7 AM)
+                        if start_time.hour < 7:
+                            # Adjust the job.start time to the first working hour (7 AM)
+                            start_time = start_time.replace(hour=7, minute=0)
+
+                    # Save the job's start and end times
+                    job.Start = start_time
+                    job.Ende = end_time
+                    job.save()
+
+                    # Update the current time for the machine
+                    machine_current_time[machine] = end_time
+
+            # Handle unscheduled jobs (jobs without valid schedules)
+            unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
+            for job in unscheduled_jobs:
+                # Assign start and end times without checking for constraints
+                start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                start_time += timedelta(days=1)  # Move to the next production day
+                start_time += timedelta(minutes=int(job.Ruestzeit_Soll))
+                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
 
                 # Save the job's start and end times
                 job.Start = start_time
                 job.Ende = end_time
                 job.save()
 
-                # Update the current time for the machine
-                machine_current_time[machine] = end_time
-
-        # Handle unscheduled jobs (jobs without valid schedules)
-        unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
-        for job in unscheduled_jobs:
-            # Assign start and end times without checking for constraints
-            start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
-            start_time += timedelta(days=1)  # Move to the next production day
-            start_time += timedelta(minutes=int(job.Ruestzeit_Soll))
-            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
-
-            # Save the job's start and end times
-            job.Start = start_time
-            job.Ende = end_time
-            job.save()
-
-        # Return response
-        return Response({'message': 'SJF abgeschlossen.'})
+            # Return response
+            return Response({'message': 'SJF abgeschlossen.'})
+            
+        except Exception as e:
+            # If an exception occurs during the execution of the function, the code inside this block will handle it.
+            # You can customize the error message and status code to suit your needs.
+            error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+            return Response({"message": error_message})
 
     @action(detail=False, methods=['post'])
     def run_deadline_first(self, request):
-        # Retrieve the jobs from the database
-        jobs = Job.objects.all()
+        try:
+            # Retrieve the jobs from the database
+            jobs = Job.objects.all()
 
-        # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
-        sorted_jobs = sorted(jobs, key=lambda job: job.LTermin)
+            # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
+            sorted_jobs = sorted(jobs, key=lambda job: job.LTermin)
 
-        # Initialize variables
-        machine_current_time = {}  # Dictionary to track current time for each machine
+            # Initialize variables
+            machine_current_time = {}  # Dictionary to track current time for each machine
 
-        # Get the current server time in the specified timezone
-        timezone = pytz.timezone('Europe/Berlin')
-        server_time = datetime.now(timezone)
+            # Get the current server time in the specified timezone
+            timezone = pytz.timezone('Europe/Berlin')
+            server_time = datetime.now(timezone)
 
-        # Define the production time range
-        start_hour = 7
-        end_hour = 23
+            # Define the production time range
+            start_hour = 7
+            end_hour = 23
 
-        # Check if today is a working day
-        if not is_working_day(server_time):
-            server_time = get_next_working_day(server_time)
+            # Check if today is a working day
+            if not is_working_day(server_time):
+                server_time = get_next_working_day(server_time)
 
-        # Iterate through the sorted jobs and schedule them
-        for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
-            # Get the machine and its corresponding jobs
-            machine, jobs = machine_jobs
+            # Iterate through the sorted jobs and schedule them
+            for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
+                # Get the machine and its corresponding jobs
+                machine, jobs = machine_jobs
 
-            # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
-            sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
+                # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
+                sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
 
-            for job in sorted_machine_jobs:
-                # Consider setup time for new jobs
-                if machine in machine_current_time:
-                    current_time = machine_current_time[machine]
-                else:
-                    # Adjust the current server time based on daylight saving time
-                    if not is_aware(server_time):
-                        server_time = make_aware(server_time, timezone)
-                    current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                for job in sorted_machine_jobs:
+                    # Consider setup time for new jobs
+                    if machine in machine_current_time:
+                        current_time = machine_current_time[machine]
+                    else:
+                        # Adjust the current server time based on daylight saving time
+                        if not is_aware(server_time):
+                            server_time = make_aware(server_time, timezone)
+                        current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
 
-                # Move to the next working day if the current time is not within working hours
-                while current_time and not is_working_hour(current_time):
-                    current_time = get_next_working_day(current_time)
-
-                # If there is no valid working time for scheduling, move this job to the next production day
-                if not current_time:
-                    current_time = get_next_working_day(server_time)
+                    # Move to the next working day if the current time is not within working hours
                     while current_time and not is_working_hour(current_time):
                         current_time = get_next_working_day(current_time)
 
-                start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
-                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+                    # If there is no valid working time for scheduling, move this job to the next production day
+                    if not current_time:
+                        current_time = get_next_working_day(server_time)
+                        while current_time and not is_working_hour(current_time):
+                            current_time = get_next_working_day(current_time)
 
-                # Check if the job.end time exceeds the working hours (11 PM)
-                if end_time.hour >= 23:
-                    # Unassign start and end times for this job to reschedule it the next morning at 7 AM
-                    start_time = None
-                    end_time = None
-                else:
-                    # Check if the job.start time is earlier than the working hours (7 AM)
-                    if start_time.hour < 7:
-                        # Adjust the job.start time to the first working hour (7 AM)
-                        start_time = start_time.replace(hour=7, minute=0)
+                    start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Soll))
+                    end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                    # Check if the job.end time exceeds the working hours (11 PM)
+                    if end_time.hour >= 23:
+                        # Unassign start and end times for this job to reschedule it the next morning at 7 AM
+                        start_time = None
+                        end_time = None
+                    else:
+                        # Check if the job.start time is earlier than the working hours (7 AM)
+                        if start_time.hour < 7:
+                            # Adjust the job.start time to the first working hour (7 AM)
+                            start_time = start_time.replace(hour=7, minute=0)
+
+                    # Save the job's start and end times
+                    job.Start = start_time
+                    job.Ende = end_time
+                    job.save()
+
+                    # Update the current time for the machine
+                    machine_current_time[machine] = end_time
+
+            # Handle unscheduled jobs (jobs without valid schedules)
+            unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
+            for job in unscheduled_jobs:
+                # Assign start and end times without checking for constraints
+                start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+                start_time += timedelta(days=1)  # Move to the next production day
+                start_time += timedelta(minutes=int(job.Ruestzeit_Soll))
+                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
 
                 # Save the job's start and end times
                 job.Start = start_time
                 job.Ende = end_time
                 job.save()
 
-                # Update the current time for the machine
-                machine_current_time[machine] = end_time
+            # Return response
+            return Response({'message': 'Deadline first abgeschlossen.'})
 
-        # Handle unscheduled jobs (jobs without valid schedules)
-        unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
-        for job in unscheduled_jobs:
-            # Assign start and end times without checking for constraints
-            start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
-            start_time += timedelta(days=1)  # Move to the next production day
-            start_time += timedelta(minutes=int(job.Ruestzeit_Soll))
-            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
-
-            # Save the job's start and end times
-            job.Start = start_time
-            job.Ende = end_time
-            job.save()
-
-        # Return response
-        return Response({'message': 'Deadline first abgeschlossen.'})
+        except Exception as e:
+            # If an exception occurs during the execution of the function, the code inside this block will handle it.
+            # You can customize the error message and status code to suit your needs.
+            error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+            return Response({"message": error_message})
 
     @action(detail=False, methods=['post'])
     def stop_PL_optimizer(self, request):
