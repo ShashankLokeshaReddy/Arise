@@ -107,9 +107,6 @@ def run_PL_optimizer_in_diff_process(self, request, input_jobs):
 
     for machine in df.Maschine.unique():
         data[machine] = df[df.Maschine == machine].sort_values('Start').reset_index(drop=True)
-        # machine = 'SL12'
-        # production_start = pd.Timestamp(date(2017, 3, 10)) # datetime.date(2015, 1, 14)
-        # get data which is released before production start and has a due data not before one day after production start
         df_test = data[machine].reset_index(drop=True)
         df_test.head()
         schedule, meta_params  = Optimization(df_test)
@@ -118,13 +115,111 @@ def run_PL_optimizer_in_diff_process(self, request, input_jobs):
         schedule['Ende'] = schedule['Ende'].astype(str)
 
         # Convert the schedule DataFrame to a list of dictionaries
-        schedule_list = schedule.to_dict(orient='records')
+        sorted_jobs = schedule.to_dict(orient='records')
 
-        # Update the database objects with the optimized schedule
-        for job_data in schedule_list:
-            job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'], Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'])
-            job_instance.Start = pd.to_datetime(job_data.get('Start')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Start') else None
-            job_instance.Ende = pd.to_datetime(job_data.get('Ende')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Ende') else None
+        # Initialize variables
+        machine_current_time = {}  # Dictionary to track current time for each machine
+
+        # Get the current server time in the specified timezone
+        timezone = pytz.timezone('Europe/Berlin')
+        server_time = datetime.now(timezone)
+        print("server_time",server_time)
+
+        # Define the production time range
+        start_hour = 7
+        end_hour = 23
+
+        # Check if today is a working day
+        if not is_working_day(server_time):
+            server_time = get_next_working_day(server_time)
+
+        job_instances = []
+
+        # Loop through the data and create Job instances
+        for item in sorted_jobs:
+            job_instance = Job(
+                Fefco_Teil=item['Fefco_Teil'],
+                ArtNr_Teil=item['ArtNr_Teil'],
+                AKNR=item['AKNR'],
+                TeilNr=item['TeilNr'],
+                SchrittNr=item['SchrittNr'],
+                Maschine=item['Maschine'],
+                Start=item['Start'],  # Keep up to six decimal places for seconds
+                Ende=item['Ende'], 
+                Ruestzeit_Ist=item['Ruestzeit_Ist'],
+                Ruestzeit_Soll=item['Ruestzeit_Soll'],
+                Laufzeit_Soll=item['Laufzeit_Soll'],
+                Lieferdatum_Rohmaterial=item['Lieferdatum_Rohmaterial'],
+                LTermin=item['LTermin'],
+            )
+            job_instances.append(job_instance)
+        sorted_jobs = job_instances
+
+        # Iterate through the sorted jobs and schedule them
+        for machine_jobs in groupby(sorted_jobs, key=lambda job: job.Maschine):
+            # Get the machine and its corresponding jobs
+            machine, jobs = machine_jobs
+
+            # Sort the machine jobs based on 'Laufzeit_Soll'
+            sorted_machine_jobs = jobs#sorted(jobs, key=lambda job: job.Laufzeit_Soll)
+
+            for job in sorted_machine_jobs:
+                # Consider setup time for new jobs
+                if machine in machine_current_time:
+                    current_time = machine_current_time[machine]
+                else:
+                    # Adjust the current server time based on daylight saving time
+                    if not is_aware(server_time):
+                        server_time = make_aware(server_time, timezone)
+                    current_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+
+                # Move to the next working day if the current time is not within working hours
+                while current_time and not is_working_hour(current_time):
+                    current_time = get_next_working_day(current_time)
+
+                # If there is no valid working time for scheduling, move this job to the next production day
+                if not current_time:
+                    current_time = get_next_working_day(server_time)
+                    while current_time and not is_working_hour(current_time):
+                        current_time = get_next_working_day(current_time)
+
+                start_time = current_time + timedelta(minutes=int(job.Ruestzeit_Ist))
+                end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                # Check if the job.end time exceeds the working hours (11 PM)
+                if end_time.hour >= 23:
+                    # Unassign start and end times for this job to reschedule it the next morning at 7 AM
+                    start_time = None
+                    end_time = None
+                else:
+                    # Check if the job.start time is earlier than the working hours (7 AM)
+                    if start_time.hour < 7:
+                        # Adjust the job.start time to the first working hour (7 AM)
+                        start_time = start_time.replace(hour=7, minute=0)
+                        end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+                # Save the job's start and end times
+                job_instance = Job.objects.get(AKNR=job.AKNR, TeilNr=job.TeilNr, SchrittNr=job.SchrittNr, Fefco_Teil=job.Fefco_Teil, ArtNr_Teil=job.ArtNr_Teil)
+                job_instance.Start = start_time
+                job_instance.Ende = end_time
+                job_instance.save()
+
+                # Update the current time for the machine
+                machine_current_time[machine] = end_time
+
+        # Handle unscheduled jobs (jobs without valid schedules)
+        unscheduled_jobs = Job.objects.filter(Start=None, Ende=None)
+        for job in unscheduled_jobs:
+            # Assign start and end times without checking for constraints
+            start_time = server_time.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+            start_time += timedelta(days=1)  # Move to the next production day
+            start_time += timedelta(minutes=int(job.Ruestzeit_Ist))
+            end_time = start_time + timedelta(minutes=int(job.Laufzeit_Soll))
+
+            # Save the job's start and end times
+            job_instance = Job.objects.get(AKNR=job.AKNR, TeilNr=job.TeilNr, SchrittNr=job.SchrittNr, Fefco_Teil=job.Fefco_Teil, ArtNr_Teil=job.ArtNr_Teil)
+            job_instance.Start = start_time
+            job_instance.Ende = end_time
             job_instance.save()
 
 class JobsViewSet(ModelViewSet):
@@ -290,6 +385,7 @@ class JobsViewSet(ModelViewSet):
             # Get the current server time in the specified timezone
             timezone = pytz.timezone('Europe/Berlin')
             server_time = datetime.now(timezone)
+            print("server_time",server_time)
 
             # Define the production time range
             start_hour = 7
@@ -304,9 +400,11 @@ class JobsViewSet(ModelViewSet):
                 # Get the machine and its corresponding jobs
                 machine, jobs = machine_jobs
 
-                # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
-                sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
-
+                # Sort the machine jobs based on 'Laufzeit_Soll'
+                sorted_machine_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
+                print("sorted_machine_jobs")
+                print(jobs)
+                print(sorted_machine_jobs)
                 for job in sorted_machine_jobs:
                     # Consider setup time for new jobs
                     if machine in machine_current_time:
@@ -402,8 +500,8 @@ class JobsViewSet(ModelViewSet):
                 # Get the machine and its corresponding jobs
                 machine, jobs = machine_jobs
 
-                # Sort the machine jobs based on 'Lieferdatum_Rohmaterial'
-                sorted_machine_jobs = sorted(jobs, key=lambda job: job.Lieferdatum_Rohmaterial)
+                # Sort the machine jobs based on 'LTermin'
+                sorted_machine_jobs = sorted(jobs, key=lambda job: job.LTermin)
 
                 for job in sorted_machine_jobs:
                     # Consider setup time for new jobs

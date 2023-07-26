@@ -269,9 +269,12 @@ earliest release date!'
                                                                      'AKNR', 
                                                                      'TeilNr',
                                                                      'SchrittNr', 
+                                                                     'Maschine',
                                                                      'Start', 
                                                                      'Ende', 
                                                                      'Ruestzeit_Ist',
+                                                                     'Ruestzeit_Soll',
+                                                                     'Laufzeit_Soll',
                                                                      'Lieferdatum_Rohmaterial', 
                                                                      'Due_Date']]
         schedule_df['Start'] = StartTime_Timestamp_result_sorted

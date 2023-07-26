@@ -245,6 +245,7 @@ export default {
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
+          window.alert(response.data.message);
           this.fillTable();
         })
         .catch((error) => {
@@ -262,6 +263,7 @@ export default {
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
+          window.alert(response.data.message);
           this.fillTable();
         })
         .catch((error) => {
@@ -279,6 +281,7 @@ export default {
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
+          window.alert(response.data.message);
           this.fillTable();
         })
         .catch((error) => {
