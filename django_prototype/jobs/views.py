@@ -123,7 +123,6 @@ def run_PL_optimizer_in_diff_process(self, request, input_jobs):
         # Get the current server time in the specified timezone
         timezone = pytz.timezone('Europe/Berlin')
         server_time = datetime.now(timezone)
-        print("server_time",server_time)
 
         # Define the production time range
         start_hour = 7
@@ -385,7 +384,6 @@ class JobsViewSet(ModelViewSet):
             # Get the current server time in the specified timezone
             timezone = pytz.timezone('Europe/Berlin')
             server_time = datetime.now(timezone)
-            print("server_time",server_time)
 
             # Define the production time range
             start_hour = 7
@@ -402,9 +400,6 @@ class JobsViewSet(ModelViewSet):
 
                 # Sort the machine jobs based on 'Laufzeit_Soll'
                 sorted_machine_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
-                print("sorted_machine_jobs")
-                print(jobs)
-                print(sorted_machine_jobs)
                 for job in sorted_machine_jobs:
                     # Consider setup time for new jobs
                     if machine in machine_current_time:
