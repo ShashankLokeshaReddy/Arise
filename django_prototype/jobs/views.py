@@ -88,7 +88,7 @@ def is_valid_datetime(datetime_str):
     except ValueError:
         return False
 
-def run_PL_optimizer_in_diff_process(self, request, input_jobs):
+def run_PL_optimizer_in_diff_process_IEM(self, request, input_jobs):
     df = pd.DataFrame(input_jobs)
     # change data types
     df['Start'] = pd.to_datetime(df['Start'])
@@ -221,6 +221,45 @@ def run_PL_optimizer_in_diff_process(self, request, input_jobs):
             job_instance.Ende = end_time
             job_instance.save()
 
+def run_PL_optimizer_in_diff_process_Bielefeld(self, request, input_jobs):
+    df = pd.DataFrame(input_jobs)
+    # change data types
+    df['Start'] = pd.to_datetime(df['Start'])
+    df['Ende'] = pd.to_datetime(df['Ende'])
+    df['LTermin'] = pd.to_datetime(df['LTermin'])
+    df['Lieferdatum_Rohmaterial'] = pd.to_datetime(df['Lieferdatum_Rohmaterial'])
+    df['Ruestzeit_Soll'] = df['Ruestzeit_Soll'].astype(int)
+    df['Laufzeit_Soll'] = df['Laufzeit_Soll'].astype(int)
+    df['Zeit_Soll'] = df['Zeit_Soll'].astype(int)
+    # build and rename columns
+    df['Release_Date'] = df['Lieferdatum_Rohmaterial'] + pd.Timedelta(days=1)
+    df = df.rename(columns = {'LTermin': 'Due_Date', 'Fefco_Teil': 'FEFCO_Teil'}) # rename, because the new Schulte data has different column names
+
+    # divide data by machines: Each machine gets a unique df
+    data = {}
+
+    for machine in df.Maschine.unique():
+        data[machine] = df[df.Maschine == machine].sort_values('Start').reset_index(drop=True)
+        # machine = 'SL12'
+        # production_start = pd.Timestamp(date(2017, 3, 10)) # datetime.date(2015, 1, 14)
+        # get data which is released before production start and has a due data not before one day after production start
+        df_test = data[machine].reset_index(drop=True)
+        df_test.head()
+        schedule, meta_params  = Optimization(df_test)
+        schedule = schedule.rename(columns = {'Due_Date': 'LTermin', 'FEFCO_Teil': 'Fefco_Teil'})
+        schedule['Start'] = schedule['Start'].astype(str)
+        schedule['Ende'] = schedule['Ende'].astype(str)
+
+        # Convert the schedule DataFrame to a list of dictionaries
+        schedule_list = schedule.to_dict(orient='records')
+
+        # Update the database objects with the optimized schedule
+        for job_data in schedule_list:
+            job_instance = Job.objects.get(AKNR=job_data['AKNR'], TeilNr=job_data['TeilNr'], SchrittNr=job_data['SchrittNr'], Fefco_Teil=job_data['Fefco_Teil'], ArtNr_Teil=job_data['ArtNr_Teil'])
+            job_instance.Start = pd.to_datetime(job_data.get('Start')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Start') else None
+            job_instance.Ende = pd.to_datetime(job_data.get('Ende')).strftime("%Y-%m-%dT%H:%M:%SZ") if job_data.get('Ende') else None
+            job_instance.save()
+
 class JobsViewSet(ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobsSerializer
@@ -350,14 +389,14 @@ class JobsViewSet(ModelViewSet):
             error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
             return Response({"message": error_message})
 
-    # runs genetic optimizer
+    # runs PL optimizer IEM
     @action(detail=False, methods=['post'])
-    def run_preference_learning_optimizer(self, request):
+    def run_preference_learning_optimizer_IEM(self, request):
         try:
             jobs = Job.objects.all()
             serializer = JobsSerializer(jobs, many=True)
             input_jobs = serializer.data
-            p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process, args=(self,request,input_jobs,))
+            p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process_IEM, args=(self,request,input_jobs,))
             p.start()
             pid.append(p.pid)
             p.join()
@@ -368,7 +407,26 @@ class JobsViewSet(ModelViewSet):
             # You can customize the error message and status code to suit your needs.
             error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
             return Response({"message": error_message})
-    
+     
+    # runs PL optimizer Bielefeld
+    @action(detail=False, methods=['post'])
+    def run_preference_learning_optimizer_Bielefeld(self, request):
+        try:
+            jobs = Job.objects.all()
+            serializer = JobsSerializer(jobs, many=True)
+            input_jobs = serializer.data
+            p = multiprocessing.Process(target=run_PL_optimizer_in_diff_process_Bielefeld, args=(self,request,input_jobs,))
+            p.start()
+            pid.append(p.pid)
+            p.join()
+            response = {'message': 'Preference Learning-Optimierer abgeschlossen.'}
+            return Response(response)
+        except Exception as e:
+            # If an exception occurs during the execution of the function, the code inside this block will handle it.
+            # You can customize the error message and status code to suit your needs.
+            error_message = "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten:" + str(e)
+            return Response({"message": error_message})
+       
     @action(detail=False, methods=['post'])
     def run_sjf(self, request):
         try:

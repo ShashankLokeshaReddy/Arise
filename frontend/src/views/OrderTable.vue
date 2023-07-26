@@ -7,7 +7,8 @@
           <button class="custom-button" @click="runDeadlineFirst">Early Deadline</button>
         </div>
         <div class="date-input-container">
-          <button class="custom-button" @click="runPLOptimizer">Preference Optimizer</button>
+          <button class="custom-button" @click="runPLOptimizer_IEM">PL-IEM</button>
+          <button class="custom-button" @click="runPLOptimizer_Bielefeld">PL-Bielefeld</button>
           <button class="custom-button" @click="stopProcess">PL stoppen</button>
         </div>
       </v-col>
@@ -270,14 +271,32 @@ export default {
           console.log(error);
         });
     },
-    runPLOptimizer() {
+    runPLOptimizer_IEM() {
       const confirmed = window.confirm("Möchten Sie den PL-Algorithmus ausführen?");
       if (!confirmed) {
         return;
       }
       this.isLoading = true; // show loading icon
       axios
-        .post('http://' + window.location.hostname + ':8001/api/jobs/run_preference_learning_optimizer/')
+        .post('http://' + window.location.hostname + ':8001/api/jobs/run_preference_learning_optimizer_IEM/')
+        .then((response) => {
+          console.log(response.data);
+          this.isLoading = false;
+          window.alert(response.data.message);
+          this.fillTable();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    runPLOptimizer_Bielefeld() {
+      const confirmed = window.confirm("Möchten Sie den PL-Algorithmus ausführen?");
+      if (!confirmed) {
+        return;
+      }
+      this.isLoading = true; // show loading icon
+      axios
+        .post('http://' + window.location.hostname + ':8001/api/jobs/run_preference_learning_optimizer_Bielefeld/')
         .then((response) => {
           console.log(response.data);
           this.isLoading = false;
