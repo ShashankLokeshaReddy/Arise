@@ -7,9 +7,8 @@
           <button class="custom-button" @click="runDeadlineFirst">Early Deadline</button>
         </div>
         <div class="date-input-container">
-          <button class="custom-button" @click="runPLOptimizer_IEM">PL-IEM</button>
-          <button class="custom-button" @click="runPLOptimizer_Bielefeld">PL-Bielefeld</button>
-          <button class="custom-button" @click="stopProcess">PL stoppen</button>
+          <button class="custom-button" @click="runPLOptimizer_IEM">PL mit Randbedingungen</button>
+          <button class="custom-button" @click="runPLOptimizer_Bielefeld">PL ohne Randbedingungen</button>
         </div>
       </v-col>
       <v-col align="center">
