@@ -179,12 +179,35 @@ export default defineComponent({
                 this.showEventPopup = true; // Open the popup
             },
             eventDidMount: (info) => {
-                if(info.event.classNames[0] === "fwd"){
-                    info.el.style.background = `blue`;
+                const setupTimeMinutes = info.event.extendedProps.Ruestzeit_Soll;
+                const eventStart = info.event.start; // Convert event start time to Moment.js object
+
+                // Calculate setup time duration in milliseconds
+                const setupTimeDuration = setupTimeMinutes * 60 * 1000;
+
+                console.log("----------")
+                console.log(eventStart)
+                console.log(eventStart.getTime())
+                console.log(setupTimeDuration)
+
+                // Subtract setup time duration from the event start time using Moment.js
+                const adjustedStartTime = new Date(eventStart.getTime() - setupTimeDuration);
+
+                // Calculate the delta percentage for the gradient based on setup time
+                const delta = (setupTimeDuration / (info.event.end - adjustedStartTime)) * 100;
+
+                console.log("----------")
+                console.log(adjustedStartTime)
+
+                // Override event start time
+                info.event.setStart(adjustedStartTime);
+
+                if (info.event.classNames[0] === "fwd") {
+                    info.el.style.background = `linear-gradient(90deg, grey ${delta}%, blue 0%)`;
+                } else if (info.event.classNames[0] === "fwd_db") {
+                    info.el.style.background = `linear-gradient(90deg, grey ${delta}%, green 0%)`;
                 }
-                if(info.event.classNames[0] === "fwd_db"){
-                    info.el.style.background = `green`;
-                }
+
                 info.el.style.color = "white";
             },
             eventResize: (info) => {
@@ -194,10 +217,17 @@ export default defineComponent({
                     var selectedMachine = resources[0]["title"];
                     var machines = info.event.extendedProps.machines;
                     var allowedMachines = machines.split(',');
-                    
-                    // Check whether the selected machine is allowed
-                    if (allowedMachines.includes(selectedMachine)) {
-                        const start_s = new Date(info.event.start);
+                    const eventStart = info.event.start;
+                    const setupTimeMinutes = info.event.extendedProps.Ruestzeit_Soll;
+                    const setupTimeDuration = setupTimeMinutes * 60 * 1000;
+                    const delta = (setupTimeDuration / (info.event.end - eventStart)) * 100;
+
+                    if (delta > 100) {
+                        info.revert();
+                        alert('Eine Bewegung ist nicht zulässig, da die gesamte Produktionsdauer kürzer ist als die Rüstzeit, was unpraktisch ist');
+                    }
+                    else if (allowedMachines.includes(selectedMachine)) {
+                        const start_s = new Date(eventStart.getTime() + setupTimeDuration);
                         const startISOString = start_s.toISOString().substring(0, 19) + "Z";
                         const end_s = new Date(info.event.end);
                         const endISOString = end_s.toISOString().substring(0, 19) + "Z";
@@ -214,6 +244,12 @@ export default defineComponent({
                             Maschine: selectedMachine
                         };
 
+                        if (info.event.classNames[0] === "fwd") {
+                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, blue 0%)`;
+                        } else if (info.event.classNames[0] === "fwd_db") {
+                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, green 0%)`;
+                        }
+
                         const formData = new FormData();
                         for (let key in jobs_data) {
                             formData.append(key, jobs_data[key]);
@@ -229,6 +265,16 @@ export default defineComponent({
                     else {
                         // If the selected machine is not allowed, revert the event to its original position
                         info.revert();
+                        const adjustedStartTime = new Date(info.event.start.getTime() + setupTimeDuration);
+                        const delta = (setupTimeDuration / (info.event.end - info.event.start)) * 100;
+                        info.event.setStart(adjustedStartTime);
+
+                        if (info.event.classNames[0] === "fwd") {
+                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, blue 0%)`;
+                        } else if (info.event.classNames[0] === "fwd_db") {
+                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, green 0%)`;
+                        }
+
                         alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                     }
                 }
@@ -245,9 +291,13 @@ export default defineComponent({
                     var selectedMachine = resources[0]["title"];
                     var machines = info.event.extendedProps.machines;
                     var allowedMachines = machines.split(',');
+                    const eventStart = info.event.start;
+                    const setupTimeMinutes = info.event.extendedProps.Ruestzeit_Soll;
+                    const setupTimeDuration = setupTimeMinutes * 60 * 1000;
+
                     // Check whether the selected machine is allowed
                     if (allowedMachines.includes(selectedMachine)) {
-                        const start_s = new Date(info.event.start);
+                        const start_s = new Date(eventStart.getTime() + setupTimeDuration);
                         const startISOString = start_s.toISOString().substring(0, 19) + "Z";
                         const end_s = new Date(info.event.end);
                         const endISOString = end_s.toISOString().substring(0, 19) + "Z";
@@ -278,6 +328,16 @@ export default defineComponent({
                     else {
                         // If the selected machine is not allowed, revert the event to its original position
                         info.revert();
+                        const adjustedStartTime = new Date(info.event.start.getTime() + setupTimeDuration);
+                        const delta = (setupTimeDuration / (info.event.end - info.event.start)) * 100;
+                        info.event.setStart(adjustedStartTime);
+
+                        if (info.event.classNames[0] === "fwd") {
+                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, blue 0%)`;
+                        } else if (info.event.classNames[0] === "fwd_db") {
+                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, green 0%)`;
+                        }
+                        
                         alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
                     }
                 }

@@ -3,7 +3,7 @@ psycopg2>=2.8
 pandas
 pyodbc
 datetime
-scikit-learn==1.2.1
+scikit-learn
 xgboost>=1.7.3
 gurobipy
 mip
