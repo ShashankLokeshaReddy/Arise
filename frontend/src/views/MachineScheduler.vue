@@ -184,9 +184,9 @@ export default defineComponent({
                 const delta = (setupTimeDuration / (info.event.end - info.event.start)) * 100;
 
                 if (info.event.classNames[0] === "fwd") {
-                    info.el.style.background = `linear-gradient(90deg, grey ${delta}%, blue 0%)`;
+                    info.el.style.background = `linear-gradient(90deg, purple ${delta}%, blue 0%)`;
                 } else if (info.event.classNames[0] === "fwd_db") {
-                    info.el.style.background = `linear-gradient(90deg, grey ${delta}%, green 0%)`;
+                    info.el.style.background = `linear-gradient(90deg, purple ${delta}%, green 0%)`;
                 }
 
                 info.el.style.color = "white";
@@ -227,9 +227,9 @@ export default defineComponent({
                         };
 
                         if (info.event.classNames[0] === "fwd") {
-                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, blue 0%)`;
+                            info.el.style.background = `linear-gradient(90deg, purple ${delta}%, blue 0%)`;
                         } else if (info.event.classNames[0] === "fwd_db") {
-                            info.el.style.background = `linear-gradient(90deg, grey ${delta}%, green 0%)`;
+                            info.el.style.background = `linear-gradient(90deg, purple ${delta}%, green 0%)`;
                         }
 
                         const formData = new FormData();
