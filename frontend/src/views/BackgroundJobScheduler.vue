@@ -186,6 +186,9 @@ export default defineComponent({
                     let gmtTime_view_start = new Date(view_start.getTime() + offset_start * 60 * 1000);
                     let offset_end = view_end.getTimezoneOffset();
                     let gmtTime_view_end = new Date(view_end.getTime() + offset_end * 60 * 1000);
+                    const setupTimeMinutes = info.event.extendedProps.Ruestzeit_Soll;
+                    const setupTimeDuration = setupTimeMinutes * 60 * 1000;
+                    const delta1 = (setupTimeDuration / (info.event.end - info.event.start)) * 100;
                     var resources = info.event.getResources();
                     var all_events = resources[0].getEvents()
                     var bck_event
@@ -211,14 +214,15 @@ export default defineComponent({
                         var numerator = bck_event.end - override_start;
                         var denominator = override_end - override_start;
                         var delta = numerator*100/denominator;
-                        info.el.style.background = `linear-gradient(90deg, blue ${delta}%, red 0%)`;
+                        var delta2 = delta - delta1;
+                        info.el.style.background = `linear-gradient(270deg, red 0% ${100-delta}%, blue ${100-delta}% ${100-delta1}%, purple 0%)`;
                         info.el.style.color = "white";
                     }
                     else if(info.event.classNames[0] === "bck"){
                         info.el.style.background = `orange`;
                     }
                     else{
-                        info.el.style.background = `blue`;
+                        info.el.style.background = `linear-gradient(90deg, purple ${delta1}%, blue 0%)`;
                         info.el.style.color = "white";
                     }
                 }
@@ -255,14 +259,14 @@ export default defineComponent({
                         var numerator = bck_db_event.end - override_start;
                         var denominator = override_end - override_start;
                         var delta = numerator*100/denominator;
-                        info.el.style.background = `linear-gradient(90deg, green ${delta}%, red 0%)`;
+                        info.el.style.background = `linear-gradient(270deg, red 0% ${100-delta}%, green ${100-delta}% ${100-delta1}%, purple 0%)`;
                         info.el.style.color = "white";
                     }
                     else if(info.event.classNames[0] === "bck_db"){
                         info.el.style.background = `grey`;
                     }
                     else{
-                        info.el.style.background = `green`;
+                        info.el.style.background = `linear-gradient(90deg, purple ${delta1}%, green 0%)`;
                         info.el.style.color = "white";
                     }
                 }
@@ -282,12 +286,14 @@ export default defineComponent({
                     const endISOString = end_s.toISOString();
                     end_s.setDate(end_s.getDate() + 2);
                     const LTermin = end_s.toISOString().substring(0, 19) + "Z";
+                    info.event.setExtendedProp('Lieferdatum_Rohmaterial', startISOString)
+                    info.event.setExtendedProp('LTermin', endISOString)
 
                     const jobs_data = {AKNR: info.event.extendedProps.AKNR, Lieferdatum_Rohmaterial: Lieferdatum_Rohmaterial, LTermin: LTermin, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Ruestzeit_Soll: info.event.extendedProps.Ruestzeit_Soll, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
 
                     const formData = new FormData();
                     for (let key in jobs_data) {
-                    formData.append(key, jobs_data[key]);
+                        formData.append(key, jobs_data[key]);
                     }
                     console.log("jobs_data",jobs_data)
                     console.log("formData",formData)
@@ -320,6 +326,8 @@ export default defineComponent({
                     const endISOString = end_s.toISOString();
                     end_s.setDate(end_s.getDate() + 2);
                     const LTermin = end_s.toISOString().substring(0, 19) + "Z";
+                    info.event.setExtendedProp('Lieferdatum_Rohmaterial', startISOString)
+                    info.event.setExtendedProp('LTermin', endISOString)
 
                     const jobs_data = {AKNR: info.event.extendedProps.AKNR, Lieferdatum_Rohmaterial: Lieferdatum_Rohmaterial, LTermin: LTermin, TeilNr: info.event.extendedProps.TeilNr, SchrittNr: info.event.extendedProps.SchrittNr, Ruestzeit_Soll: info.event.extendedProps.Ruestzeit_Soll, Fefco_Teil: info.event.extendedProps.Fefco_Teil, ArtNr_Teil: info.event.extendedProps.ArtNr_Teil};
 
@@ -498,6 +506,12 @@ export default defineComponent({
             
             var events_var = []
             for (var i = 0; i < output.length; ++i) {
+                var start_date_str = output[i]["Start"];
+                var minutes_to_add = output[i]["Ruestzeit_Soll"];
+                var start_date = new Date(start_date_str);
+                var end_date = new Date(start_date.getTime() - minutes_to_add * 60000);
+                var adjustedStartTime = end_date.toISOString().slice(0, 19) + "Z";
+
                 var bck_event = {
                     "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
                     "title":output[i]["AKNR"] + "-" + output[i]["Suchname"],
@@ -524,7 +538,7 @@ export default defineComponent({
                 var temp_event = {
                     "resourceId":output[i]["AKNR"] + "-" + output[i]["TeilNr"]  + "-" +  output[i]["SchrittNr"] + "-" + output[i]["Suchname"],
                     "title":output[i]["Maschine"],
-                    "start":output[i]["Start"],
+                    "start":adjustedStartTime,
                     "end":output[i]["Ende"],
                     "display": 'background',
                     "eventColor":"blue",

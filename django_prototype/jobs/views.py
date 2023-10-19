@@ -434,7 +434,7 @@ class JobsViewSet(ModelViewSet):
             jobs = Job.objects.all()
 
             # Sort the jobs based on 'Laufzeit_Soll' (running time) in ascending order (SJF)
-            sorted_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
+            sorted_jobs = sorted(jobs, key=lambda job: int(job.Laufzeit_Soll))
 
             # Initialize variables
             machine_current_time = {}  # Dictionary to track current time for each machine
@@ -457,7 +457,7 @@ class JobsViewSet(ModelViewSet):
                 machine, jobs = machine_jobs
 
                 # Sort the machine jobs based on 'Laufzeit_Soll'
-                sorted_machine_jobs = sorted(jobs, key=lambda job: job.Laufzeit_Soll)
+                sorted_machine_jobs = sorted(jobs, key=lambda job: int(job.Laufzeit_Soll))
                 for job in sorted_machine_jobs:
                     # Consider setup time for new jobs
                     if machine in machine_current_time:

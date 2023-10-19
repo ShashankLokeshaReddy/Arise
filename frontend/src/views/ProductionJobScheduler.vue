@@ -260,14 +260,14 @@ export default defineComponent({
                         var numerator = bck_event.end - override_start;
                         var denominator = override_end - override_start;
                         var delta = numerator*100/denominator;
-                        info.el.style.background = `linear-gradient(90deg, green ${delta}%, red 0%)`;
+                        info.el.style.background = `linear-gradient(270deg, red 0% ${100-delta}%, green ${100-delta}% ${100-delta1}%, purple 0%)`;
                         info.el.style.color = "white";
                     }
                     else if(info.event.classNames[0] === "bck_db"){
                         info.el.style.background = `grey`;
                     }
                     else{
-                        info.el.style.background = `green`;
+                        info.el.style.background = `linear-gradient(90deg, purple ${delta1}%, green 0%)`;
                         info.el.style.color = "white";
                     }
                 }
