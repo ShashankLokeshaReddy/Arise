@@ -1,5 +1,14 @@
+scikit-learn
+xgboost>=1.7.3
+gurobipy
+mip
+optuna
+python-Levenshtein
+scipy
 pandas
+pyodbc
 numpy
+psutil
 Django>=3.0,<4.0
 psycopg2>=2.8
 datetime

@@ -1,8 +1,16 @@
 version: "3.9"
    
 services:
+  frontend:
+    build: ./frontend
+    image: node:14
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "8081:8081"
+    command: sh -c "cd /app && npm install && npm run serve"
   db:
-    image: postgres
+    image: postgres:13.9
     volumes:
       - ./data/db:/var/lib/postgresql/data
     environment:
@@ -15,7 +23,7 @@ services:
       - .:/code
       - ./data:/code/tmp_data
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
