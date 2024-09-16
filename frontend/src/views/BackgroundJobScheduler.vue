@@ -61,11 +61,11 @@ export default defineComponent({
     components: {FullCalendar},
     data()  {
         return {
-            fetchScheduledJobs: false,
-            selectedEvent: null,
-            showEventPopup: false,
-            isLoading: false,
-            calendarApi: null,
+            fetchScheduledJobs: false as boolean,
+            selectedEvent: null as any,
+            showEventPopup: false as boolean,
+            isLoading: false as boolean,
+            calendarApi: null as any,
             calendarOptions: {
                 plugins: [ 
                     DayGridPlugin,
@@ -74,17 +74,17 @@ export default defineComponent({
                     ListPlugin,
                     ResourceTimelinePlugin,
             ],
-            eventMaxStack: 3,
-            slotDuration: '00:05:00',
-            resourceAreaWidth: "10%",
-            scrollTimeReset: false,
-            slotLabelContent: ({ date }) => {
+            eventMaxStack: 3 as number,
+            slotDuration: '00:05:00' as string,
+            resourceAreaWidth: "10%" as string,
+            scrollTimeReset: false as boolean,
+            slotLabelContent: ({ date }: { date: Date }) => {
                 const hour = date.getHours();
                 const minute = date.getMinutes();
                 const startHour = 0;
                 const endHour = 24;
             },
-            slotLabelClassNames: ({ date, isLabel }) => {
+            slotLabelClassNames: ({ date, isLabel }: { date: Date, isLabel: boolean }) => {
                 const hour = date.getHours();
                 const classNames = ["slot-label"];
                 const formattedDate = date.toISOString().substring(0, 10);
@@ -103,7 +103,7 @@ export default defineComponent({
 
                 return classNames.join(" ");
             },
-            slotLaneClassNames: ({ date, isLabel }) => {
+            slotLaneClassNames: ({ date, isLabel }: { date: Date, isLabel: boolean }) => {
                 const hour = date.getHours();
                 const classNames = ["slot-label"];
                 const formattedDate = date.toISOString().substring(0, 10);

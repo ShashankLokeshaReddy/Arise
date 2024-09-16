@@ -27,4 +27,8 @@ export default {
     font-family: 'Roboto', sans-serif;
     margin: 0;
   }
+  .v-btn:hover {
+    color:rgb(255, 255, 255) !important;
+    background-color: white !important;
+  }
 </style>
