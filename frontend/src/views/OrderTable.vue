@@ -20,7 +20,7 @@
           <input v-model="endDate" type="date" id="endDate" class="date-input">
         </div>
         <button class="custom-button" @click="getUnSchedJobs(startDate, endDate)">Jobs abrufen</button>
-        <button class="custom-button" @click="saveJobs">Save Job Orders</button>
+        <button class="custom-button" @click="saveJobs">Jobs speichern</button>
       </v-col>
       <v-col align="center">
         <input type="file" ref="fileInput" @change="handleFileUpload" class="date-input">
@@ -77,7 +77,7 @@ export default {
 
   methods: {
     getUnSchedJobs(startDate, endDate) {
-      const confirmed = window.confirm("Möchten Sie alle Jobs in einer DB speichern?");
+      const confirmed = window.confirm("Möchten Sie alle neuen Jobs aus der Datenbank abrufen?");
       if (!confirmed) {
         return;
       }

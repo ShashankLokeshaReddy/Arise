@@ -308,7 +308,7 @@ export default defineComponent({
                 else {
                     // If the selected machine is not allowed, revert the event to its original position
                     info.revert();
-                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                    alert('Durch die bereits geplanten Jobs ist diese Bewegung nicht gestattet!');
                 }
             },
             eventDrop: (info) => {
@@ -347,7 +347,7 @@ export default defineComponent({
                 else {
                     // If the selected machine is not allowed, revert the event to its original position
                     info.revert();
-                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                    alert('Durch die bereits geplanten Jobs ist diese Bewegung nicht gestattet!');
                 }
             },          
 

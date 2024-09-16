@@ -204,7 +204,7 @@ export default defineComponent({
 
                     if (delta > 100) {
                         info.revert();
-                        alert('Eine Bewegung ist nicht zulässig, da die gesamte Produktionsdauer kürzer ist als die Rüstzeit, was unpraktisch ist');
+                        alert('Diese Bewegung wird nicht empfohlen, da die Gesamtroduktionsdauer kürzer ist als die Rüstzeit.');
                     }
                     else if (allowedMachines.includes(selectedMachine)) {
                         const start_s = new Date(info.event.start.getTime() + setupTimeDuration);
@@ -247,13 +247,13 @@ export default defineComponent({
                     else {
                         // If the selected machine is not allowed, revert the event to its original position
                         info.revert();
-                        alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
+                        alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Maschinen hat: ' + info.event.extendedProps.machines);
                     }
                 }
                 else {
                     // If the selected machine is not allowed, revert the event to its original position
                     info.revert();
-                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                    alert('Durch die bereits geplanten Jobs ist diese Bewegung nicht gestattet!');
                 }
             },
             eventDrop: (info) => {
@@ -303,13 +303,13 @@ export default defineComponent({
                     else {
                         // If the selected machine is not allowed, revert the event to its original position
                         info.revert();
-                        alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Computern hat: ' + info.event.extendedProps.machines);
+                        alert('Das Ereignis kann nicht gelöscht werden, da es Einschränkungen für die Ausführung auf folgenden Maschinen hat: ' + info.event.extendedProps.machines);
                     }
                 }
                 else {
                     // If the selected machine is not allowed, revert the event to its original position
                     info.revert();
-                    alert('Auf den bereits geplanten Veranstaltungen ist die Bewegung nicht gestattet');
+                    alert('Durch die bereits geplanten Jobs ist diese Bewegung nicht gestattet!');
                 }
             },
 

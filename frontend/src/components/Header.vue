@@ -4,9 +4,9 @@
       <v-col align="center">
         <v-btn-toggle mandatory tile color="primary" class="d-flex flex-row my-btn-toggle">
           <v-btn color=#FFA500 to="/">Maschinenansicht</v-btn>
-          <v-btn color=#FFA500 to="/production">Production-Jobansicht</v-btn>
-          <v-btn color=#FFA500 to="/background">Background-Jobansicht</v-btn>
-          <v-btn color=#FFA500 to="/table">Table</v-btn>
+          <v-btn color=#FFA500 to="/production">Produktions-Jobansicht</v-btn>
+          <v-btn color=#FFA500 to="/background">Hintergrund-Jobansicht</v-btn>
+          <v-btn color=#FFA500 to="/table">Tabelle</v-btn>
         </v-btn-toggle>
       </v-col>
     </v-row>
