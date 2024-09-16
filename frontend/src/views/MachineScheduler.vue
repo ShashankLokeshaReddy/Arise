@@ -523,6 +523,7 @@ export default defineComponent({
 .date-label {
   font-weight: bold;
   text-align: center;
+  font-family: 'Roboto', sans-serif;
 }
 .fc-direction-ltr .fc-toolbar > * > * {
   background-color: #F1F1F1;

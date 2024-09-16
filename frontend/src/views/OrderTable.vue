@@ -362,6 +362,7 @@ export default {
 <style>
 .custom-button {
   border: 1px solid #ccc;
+  font-family: 'Roboto', sans-serif;
   border-radius: 4px;
   padding: 6px 12px;
   font-size: 12px;
@@ -397,6 +398,7 @@ export default {
   text-transform: uppercase;
   color: #333;
   background-color: transparent;
+  font-family: 'Roboto', sans-serif;
   margin-right: 4px;
   margin-bottom: 8px;
 }

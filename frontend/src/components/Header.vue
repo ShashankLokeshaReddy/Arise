@@ -24,6 +24,7 @@ export default {
 <style scoped>
   .my-btn-toggle .v-btn {
     border: 1px solid #ccc;
+    font-family: 'Roboto', sans-serif;
     margin: 0;
   }
 </style>
